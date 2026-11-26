@@ -976,6 +976,7 @@
             <label for="bibleVersionSelect" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">Versión:</label>
             <select id="bibleVersionSelect" class="bible-select" title="Selecciona la Biblia desde la carpeta biblias/">
               <option value="NBLA">NBLA — Nueva Biblia de las Américas</option>
+              <option value="LBLA">LBLA — La Biblia de las Américas</option>
               <option value="RVR1960">RVR1960 — Reina-Valera 1960</option>
               <option value="NVI">NVI — Nueva Versión Internacional</option>
               <option value="NTV">NTV — Nueva Traducción Viviente</option>
@@ -1070,6 +1071,7 @@
 
       <select class="bt-select" id="boardVersionSelect" title="Cambiar versión bíblica en vivo" style="display:none;">
         <option value="NBLA">NBLA</option>
+        <option value="LBLA">LBLA</option>
         <option value="RVR1960">RVR1960</option>
         <option value="NVI">NVI</option>
         <option value="NTV">NTV</option>
@@ -1303,15 +1305,17 @@
 
   // ===== CATÁLOGO DE BIBLIAS EN GITHUB (./biblias/) Y MODO DE TRABAJO =====
   const BIBLES_CATALOG = {
-    NBLA:    { file: './biblias/nbla.json',    label: 'NUEVA BIBLIA DE LAS AMÉRICAS (NBLA)' },
-    RVR1960: { file: './biblias/rvr1960.json', label: 'REINA-VALERA 1960 (RVR1960)' },
-    NVI:     { file: './biblias/nvi.json',     label: 'NUEVA VERSIÓN INTERNACIONAL (NVI)' },
-    NTV:     { file: './biblias/ntv.json',     label: 'NUEVA TRADUCCIÓN VIVIENTE (NTV)' },
-    RVC:     { file: './biblias/rvc.json',     label: 'REINA VALERA CONTEMPORÁNEA (RVC)' },
-    DHH94I:  { file: './biblias/dhh94i.json',  label: 'DIOS HABLA HOY (DHH94I)' },
-    DHHS94:  { file: './biblias/dhhs94.json',  label: 'DIOS HABLA HOY ESTÁNDAR (DHHS94)' },
-    TLAI:    { file: './biblias/tlai.json',    label: 'TRADUCCIÓN EN LENGUAJE ACTUAL (TLAI)' }
+    NBLA:    { slug: 'nbla',    label: 'NUEVA BIBLIA DE LAS AMÉRICAS (NBLA)' },
+    LBLA:    { slug: 'lbla',    label: 'LA BIBLIA DE LAS AMÉRICAS (LBLA)' },
+    RVR1960: { slug: 'rvr1960', label: 'REINA-VALERA 1960 (RVR1960)' },
+    NVI:     { slug: 'nvi',     label: 'NUEVA VERSIÓN INTERNACIONAL (NVI)' },
+    NTV:     { slug: 'ntv',     label: 'NUEVA TRADUCCIÓN VIVIENTE (NTV)' },
+    RVC:     { slug: 'rvc',     label: 'REINA VALERA CONTEMPORÁNEA (RVC)' },
+    DHH94I:  { slug: 'dhh94i',  label: 'DIOS HABLA HOY (DHH94I)' },
+    DHHS94:  { slug: 'dhhs94',  label: 'DIOS HABLA HOY ESTÁNDAR (DHHS94)' },
+    TLAI:    { slug: 'tlai',    label: 'TRADUCCIÓN EN LENGUAJE ACTUAL (TLAI)' }
   };
+  const bibleLoadingPromises = {};
 
   let workMode = localStorage.getItem('pizarra_work_mode') || 'bible'; // 'bible' | 'normal'
   let activeBibleVersion = localStorage.getItem('pizarra_bible_ver') || 'NBLA';
@@ -1371,6 +1375,7 @@
         'Salmos 94:22\n' +
         'Col 1:15-17\n' +
         'John 3:16\n' +
+        'Proverbios 1\n' +
         '1 Cor. 13:4-7';
       pasteHint.textContent = 'Modo Bíblico: resuelve citas en español/inglés (completas o abreviadas) desde biblias/';
       dropZoneHint.textContent = 'Acepta solo citas (español o inglés, completas o abreviadas) o cita + texto';
@@ -1388,8 +1393,51 @@
   btnModeBible.addEventListener('click', () => applyWorkMode('bible'));
   btnModeNormal.addEventListener('click', () => applyWorkMode('normal'));
 
+  // Normaliza tanto formato plano {"genesis 1:1":"..."} como formato anidado (books/chapters/items)
+  function normalizeBibleData(raw) {
+    const map = {};
+    if (!raw || typeof raw !== 'object') return map;
+
+    if (Array.isArray(raw.books)) {
+      for (const b of raw.books) {
+        const bName = stripAccents(b.human || b.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!bName) continue;
+        for (const ch of (b.chapters || [])) {
+          const usfm = ch.usfm || '';
+          let mCh = usfm.match(/\.(\d+)$/);
+          if (!mCh) mCh = String(ch.human || '').match(/(\d+)$/);
+          if (!mCh) continue;
+          const chNum = mCh[1];
+          for (const item of (ch.items || [])) {
+            if (item.type !== 'verse') continue;
+            const vnums = item.verse_numbers || [];
+            const lines = item.lines || [];
+            if (!vnums.length || !lines.length) continue;
+            const text = lines.map(l => String(l || '').trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+            if (!text) continue;
+            const k1 = `${bName} ${chNum}:${vnums[0]}`;
+            map[k1] = map[k1] ? (map[k1] + ' ' + text) : text;
+            if (vnums.length > 1) {
+              const kr = `${bName} ${chNum}:${vnums[0]}-${vnums[vnums.length - 1]}`;
+              map[kr] = map[kr] ? (map[kr] + ' ' + text) : text;
+            }
+          }
+        }
+      }
+      return map;
+    }
+
+    Object.keys(raw).forEach(k => {
+      if (typeof raw[k] === 'string') {
+        map[stripAccents(k).toLowerCase().replace(/\s+/g, ' ').trim()] = raw[k];
+      }
+    });
+    return map;
+  }
+
   async function ensureBibleLoaded(verKey) {
-    if (verKey === 'LOCAL' && localBibleMap) {
+    if (verKey === 'LOCAL' && bibleCache['LOCAL']) {
+      localBibleMap = bibleCache['LOCAL'];
       setBibleStatus(`✅ Biblia Local (${Object.keys(localBibleMap).length.toLocaleString()} vers.)`, 'ok');
       return localBibleMap;
     }
@@ -1400,20 +1448,61 @@
       setBibleStatus(`✅ ${verKey} lista (${Object.keys(localBibleMap).length.toLocaleString()} vers.)`, 'ok');
       return localBibleMap;
     }
+    if (bibleLoadingPromises[verKey]) {
+      return await bibleLoadingPromises[verKey];
+    }
+
     setBibleStatus(`⏳ Cargando ${verKey}...`, '');
+    const slug = entry.slug;
+    const upper = slug.toUpperCase();
+    // Prueba variantes de carpeta y mayúsculas/minúsculas (GitHub Pages distingue mayúsculas)
+    const candidates = [
+      `biblias/${slug}.json`,
+      `biblias/${upper}.json`,
+      `Biblias/${slug}.json`,
+      `Biblias/${upper}.json`,
+      `biblis/${slug}.json`,
+      `biblis/${upper}.json`
+    ];
+
+    bibleLoadingPromises[verKey] = (async () => {
+      let lastErr = '';
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            lastErr = `HTTP ${res.status}`;
+            continue;
+          }
+          const raw = await res.json();
+          const map = normalizeBibleData(raw);
+          if (Object.keys(map).length === 0) {
+            lastErr = 'JSON vacío o formato desconocido';
+            continue;
+          }
+          bibleCache[verKey] = map;
+          localBibleMap = map;
+          setBibleStatus(`✅ ${verKey} lista (${Object.keys(map).length.toLocaleString()} vers.)`, 'ok');
+          return map;
+        } catch (err) {
+          lastErr = err && err.message ? err.message : 'Error de red';
+        }
+      }
+      localBibleMap = null;
+      const isFileProto = location.protocol === 'file:';
+      setBibleStatus(
+        isFileProto
+          ? `⚠️ Modo local: usa 📚 Biblia Local (.json)`
+          : `⚠️ No se encontró biblias/${slug}.json (${lastErr})`,
+        'warn'
+      );
+      return null;
+    })();
+
     try {
-      const res = await fetch(entry.file);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const raw = await res.json();
-      const map = {};
-      Object.keys(raw).forEach(k => { map[stripAccents(k).toLowerCase().trim()] = raw[k]; });
-      bibleCache[verKey] = map;
-      localBibleMap = map;
-      setBibleStatus(`✅ ${verKey} lista (${Object.keys(map).length.toLocaleString()} vers.)`, 'ok');
-      return map;
-    } catch (err) {
-      setBibleStatus(`⚠️ No se pudo autocargar ${verKey} (usa 📚 Biblia Local si estás sin servidor)`, 'warn');
-      return localBibleMap;
+      return await bibleLoadingPromises[verKey];
+    } finally {
+      delete bibleLoadingPromises[verKey];
     }
   }
 
@@ -1531,30 +1620,69 @@
     let vStart = m[3] ? parseInt(m[3], 10) : null;
     let vEnd = m[4] ? parseInt(m[4], 10) : vStart;
 
-    // Libros de un solo capítulo (ej. "Judas 24" o "Filemón 6")
+    const ver = (m[5] || '').trim().toUpperCase();
+    const body = (m[6] || '').trim();
+    let isWholeChapter = false;
+
+    // Si no trae ":versículo"
     if (vStart === null) {
       if (book.singleChapter) {
-        vStart = chapter;
-        vEnd = chapter;
-        chapter = 1;
+        // Libros de un solo capítulo: si es "Judas 1" sin texto, puede ser cap 1 completo; si es "Judas 24", verso 24
+        if (chapter === 1 && !body) {
+          isWholeChapter = true;
+          vStart = 1;
+          vEnd = 1;
+        } else {
+          vStart = chapter;
+          vEnd = chapter;
+          chapter = 1;
+        }
       } else {
-        return null; // Solo libro + capítulo sin versículo
+        // Solo aceptar "Proverbios 1" como capítulo completo si no hay prosa suelta después del número
+        if (body) return null;
+        isWholeChapter = true;
+        vStart = 1;
+        vEnd = 1;
       }
     }
     if (vEnd < vStart) vEnd = vStart;
 
-    const ver = (m[5] || '').trim().toUpperCase();
-    const body = (m[6] || '').trim();
-    const rangeStr = vEnd > vStart ? `${chapter}:${vStart}-${vEnd}` : `${chapter}:${vStart}`;
+    const rangeStr = isWholeChapter
+      ? `${chapter}`
+      : (vEnd > vStart ? `${chapter}:${vStart}-${vEnd}` : `${chapter}:${vStart}`);
     return {
       book,
       chapter,
       vStart,
       vEnd,
+      isWholeChapter,
       refDisplay: `${book.display} ${rangeStr}`,
       versionTag: ver,
       body
     };
+  }
+
+  function getChapterVerseBounds(bibleMap, book, chapter) {
+    if (!bibleMap || !book) return null;
+    const keys = book.jsonKeys || [book.id];
+    let minV = Infinity;
+    let maxV = 0;
+
+    for (const bk of keys) {
+      const prefix = `${bk} ${chapter}:`;
+      for (const k of Object.keys(bibleMap)) {
+        if (!k.startsWith(prefix)) continue;
+        const rest = k.slice(prefix.length);
+        const rm = rest.match(/^(\d+)(?:-(\d+))?$/);
+        if (!rm) continue;
+        const a = parseInt(rm[1], 10);
+        const b = rm[2] ? parseInt(rm[2], 10) : a;
+        if (a < minV) minV = a;
+        if (b > maxV) maxV = b;
+      }
+      if (maxV > 0) break;
+    }
+    return maxV > 0 ? { minV, maxV } : null;
   }
 
   function lookupBiblePassage(bibleMap, book, chapter, vStart, vEnd) {
@@ -1667,7 +1795,17 @@
   function buildBiblicalBlocksFromRef(parsedRef) {
     const ver = parsedRef.versionTag || activeBibleVersion;
     const targetMap = (parsedRef.versionTag && bibleCache[parsedRef.versionTag]) || localBibleMap;
-    const total = parsedRef.vEnd - parsedRef.vStart + 1;
+    let vStart = parsedRef.vStart;
+    let vEnd = parsedRef.vEnd;
+
+    if (parsedRef.isWholeChapter && !parsedRef.body) {
+      const bounds = getChapterVerseBounds(targetMap, parsedRef.book, parsedRef.chapter);
+      if (bounds) {
+        vStart = bounds.minV;
+        vEnd = bounds.maxV;
+      }
+    }
+    const total = vEnd - vStart + 1;
 
     // Si el usuario pegó texto manual al lado de la cita, respetar su texto sin dividir por JSON
     if (parsedRef.body) {
@@ -1696,8 +1834,8 @@
     else chunkSize = total; // 'all'
 
     const blocks = [];
-    for (let s = parsedRef.vStart; s <= parsedRef.vEnd; s += chunkSize) {
-      const e = Math.min(parsedRef.vEnd, s + chunkSize - 1);
+    for (let s = vStart; s <= vEnd; s += chunkSize) {
+      const e = Math.min(vEnd, s + chunkSize - 1);
       const rangeStr = e > s ? `${parsedRef.chapter}:${s}-${e}` : `${parsedRef.chapter}:${s}`;
       const body = lookupBiblePassage(targetMap, parsedRef.book, parsedRef.chapter, s, e);
       blocks.push({
@@ -1963,8 +2101,7 @@
     if (!f) return;
     try {
       const obj = JSON.parse(await f.text());
-      const map = {};
-      Object.keys(obj).forEach(k => { map[stripAccents(k).toLowerCase().trim()] = obj[k]; });
+      const map = normalizeBibleData(obj);
       localBibleMap = map;
       bibleCache['LOCAL'] = map;
       if (!bibleVersionSelect.querySelector('option[value="LOCAL"]')) {
