@@ -1059,8 +1059,8 @@
     </div>
 
     <div class="bt-right">
-      <button class="bt-btn" id="btnPrevVerse" title="Texto anterior">←</button>
-      <button class="bt-btn" id="btnNextVerse" title="Siguiente texto">→</button>
+      <button class="bt-btn" id="btnPrevVerse" title="Texto anterior (←)">←</button>
+      <button class="bt-btn" id="btnNextVerse" title="Siguiente texto (→)">→</button>
       <div class="bt-sep"></div>
 
       <div class="font-ctrl">
@@ -2709,59 +2709,168 @@
     else document.exitFullscreen && document.exitFullscreen();
   });
 
+  function drawRoundedRectPath(c, x, y, w, h, r) {
+    const rad = Math.min(r, w / 2, h / 2);
+    c.beginPath();
+    c.moveTo(x + rad, y);
+    c.arcTo(x + w, y, x + w, y + h, rad);
+    c.arcTo(x + w, y + h, x, y + h, rad);
+    c.arcTo(x, y + h, x, y, rad);
+    c.arcTo(x, y, x + w, y, rad);
+    c.closePath();
+  }
+
   document.getElementById('btnSavePng').addEventListener('click', () => {
     if (activeIndex < 0) return;
     const v = verses[activeIndex];
     const out = document.createElement('canvas');
-    out.width = canvas.width || 1280;
-    out.height = canvas.height || 720;
+    out.width = canvas.width || Math.max(boardStage.clientWidth, boardStage.scrollWidth) || 1280;
+    out.height = canvas.height || Math.max(boardStage.clientHeight, boardStage.scrollHeight) || 720;
     const octx = out.getContext('2d');
     const bgColors = ['#000000', '#111827', '#faf8f2'];
     const txtColors = ['#ffffff', '#f8fafc', '#1e293b'];
+
+    // 1. Fondo exacto del tema activo
     octx.fillStyle = bgColors[themeIdx];
     octx.fillRect(0, 0, out.width, out.height);
 
-    const padX = Math.max(80, (out.width - 900) / 2);
-    let y = out.height * 0.32;
-    octx.fillStyle = themeIdx === 2 ? '#b45309' : '#f5b922';
-    octx.font = 'bold 26px "Segoe UI", sans-serif';
-    octx.fillText(v.version ? `${v.ref}  [${v.version}]` : v.ref, padX, y);
+    // Coordenadas exactas relativas al lienzo desplazable (#boardStage)
+    const stageRect = boardStage.getBoundingClientRect();
+    const ox = -stageRect.left + boardStage.scrollLeft;
+    const oy = -stageRect.top + boardStage.scrollTop;
 
-    y += currentFontSize * 1.45;
-    octx.fillStyle = txtColors[themeIdx];
-    octx.font = `${currentFontSize}px "Segoe UI", sans-serif`;
-    const maxW = out.width - padX * 2;
-    const rawLines = (v.isBiblical && v.layout === 'inline')
-      ? [String(v.text || '').replace(/\n+/g, ' ')]
-      : String(v.text || '').split('\n');
-    rawLines.forEach((rawL, idx) => {
-      const prefixed = (idx === 0 && v.verseNum && !/^\d+\s/.test(rawL)) ? (v.verseNum + ' ' + rawL) : rawL;
-      let line = '';
-      for (const w of prefixed.split(' ')) {
-        const test = line ? line + ' ' + w : w;
-        if (octx.measureText(test).width > maxW && line) {
-          octx.fillText(line, padX, y);
-          line = w;
-          y += currentFontSize * 1.5;
-        } else line = test;
-      }
-      if (line) {
-        octx.fillText(line, padX, y);
-        y += currentFontSize * 1.65;
-      }
+    // 2. Referencia y etiqueta de versión en su posición exacta
+    const refRect = stageRef.getBoundingClientRect();
+    const refCs = getComputedStyle(stageRef);
+    octx.save();
+    octx.font = `${refCs.fontWeight || '700'} ${refCs.fontSize || '22px'} ${refCs.fontFamily || '"Segoe UI", sans-serif'}`;
+    octx.fillStyle = refCs.color || (themeIdx === 2 ? '#b45309' : '#f5b922');
+    octx.textBaseline = 'middle';
+    octx.fillText(stageRef.textContent || v.ref, refRect.left + ox, refRect.top + oy + refRect.height / 2);
+    octx.restore();
+
+    if (v.version && stageVer.style.display !== 'none') {
+      const verRect = stageVer.getBoundingClientRect();
+      const verCs = getComputedStyle(stageVer);
+      const vx = verRect.left + ox;
+      const vy = verRect.top + oy;
+      octx.save();
+      drawRoundedRectPath(octx, vx, vy, verRect.width, verRect.height, 6);
+      octx.fillStyle = verCs.backgroundColor || (themeIdx === 2 ? '#e2e8f0' : '#1f2636');
+      octx.fill();
+      octx.font = `${verCs.fontWeight || '700'} ${verCs.fontSize || '12px'} ${verCs.fontFamily || '"Segoe UI", sans-serif'}`;
+      octx.fillStyle = verCs.color || (themeIdx === 2 ? '#334155' : '#cbd5e1');
+      octx.textAlign = 'center';
+      octx.textBaseline = 'middle';
+      octx.fillText(stageVer.textContent || v.version, vx + verRect.width / 2, vy + verRect.height / 2);
+      octx.restore();
+    }
+
+    // 3. Números de versículo (.verse-num) en su posición exacta
+    stageText.querySelectorAll('.verse-num').forEach(el => {
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      octx.save();
+      octx.font = `${cs.fontWeight || '700'} ${cs.fontSize} ${cs.fontFamily}`;
+      octx.fillStyle = cs.color || (themeIdx === 2 ? '#b45309' : '#f5b922');
+      octx.textBaseline = 'middle';
+      octx.fillText(el.textContent, r.left + ox, r.top + oy + r.height / 2);
+      octx.restore();
     });
+
+    // 4. Cada palabra (.w-tok) con sus marcas exactas de Capa 1 (resaltado, subrayado, punteado, ondulado, caja, círculo)
+    const stageFontFamily = getComputedStyle(stageText).fontFamily || '"Segoe UI", sans-serif';
+    stageText.querySelectorAll('.w-tok').forEach(tok => {
+      const r = tok.getBoundingClientRect();
+      const x = r.left + ox;
+      const y = r.top + oy;
+      const w = r.width;
+      const h = r.height;
+      const cs = getComputedStyle(tok);
+      const key = tok.dataset.widx;
+      const mark = (v.wordMarks && v.wordMarks[key]) || null;
+
+      octx.save();
+      if (mark) {
+        if (mark.style === 'highlight') {
+          drawRoundedRectPath(octx, x, y + 1, w, h - 2, 6);
+          octx.fillStyle = hexToRgba(mark.color, 0.32);
+          octx.fill();
+        } else if (mark.style === 'box' || mark.style === 'circle') {
+          drawRoundedRectPath(octx, x + 1, y + 1, w - 2, h - 2, mark.style === 'circle' ? h / 2 : 6);
+          octx.strokeStyle = mark.color;
+          octx.lineWidth = 2.5;
+          octx.stroke();
+        }
+      }
+
+      // Texto de la palabra centrado en su caja exacta
+      octx.font = `${cs.fontWeight || '400'} ${cs.fontSize || (currentFontSize + 'px')} ${stageFontFamily}`;
+      octx.fillStyle = (mark && mark.style === 'highlight' && mark.color === '#ffffff')
+        ? '#000000'
+        : (cs.color || txtColors[themeIdx]);
+      octx.textAlign = 'center';
+      octx.textBaseline = 'middle';
+      octx.fillText(tok.textContent, x + w / 2, y + h / 2);
+
+      // Subrayados (sólido, punteado, ondulado)
+      if (mark && (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy')) {
+        const uy = y + h - Math.max(3, currentFontSize * 0.08);
+        const padL = parseFloat(cs.paddingLeft) || 3;
+        const padR = parseFloat(cs.paddingRight) || 3;
+        const ux1 = x + padL;
+        const ux2 = x + w - padR;
+        octx.strokeStyle = mark.color;
+        octx.lineCap = 'round';
+        if (mark.style === 'underline') {
+          octx.lineWidth = 3;
+          octx.beginPath();
+          octx.moveTo(ux1, uy);
+          octx.lineTo(ux2, uy);
+          octx.stroke();
+        } else if (mark.style === 'dotted') {
+          octx.lineWidth = 3;
+          octx.setLineDash([2, 5]);
+          octx.beginPath();
+          octx.moveTo(ux1, uy);
+          octx.lineTo(ux2, uy);
+          octx.stroke();
+        } else if (mark.style === 'wavy') {
+          octx.lineWidth = 2.5;
+          octx.beginPath();
+          const step = 6;
+          const amp = 2.5;
+          octx.moveTo(ux1, uy);
+          let dir = -1;
+          for (let px = ux1; px < ux2; px += step) {
+            const nx = Math.min(ux2, px + step);
+            octx.quadraticCurveTo((px + nx) / 2, uy + dir * amp, nx, uy);
+            dir *= -1;
+          }
+          octx.stroke();
+        }
+      }
+      octx.restore();
+    });
+
+    // 5. Capa 2: Trazos libres, flechas y figuras del canvas (alineación 1:1 exacta)
     octx.drawImage(canvas, 0, 0);
 
     const a = document.createElement('a');
     a.download = v.ref.replace(/[:\s]+/g, '_') + '.png';
     a.href = out.toDataURL('image/png');
     a.click();
-    showToast('⬇ Imagen PNG guardada');
+    showToast('⬇ Imagen PNG guardada con todas las marcas');
   });
 
   window.addEventListener('keydown', (e) => {
     if (!boardOverlay.classList.contains('open')) return;
+    const tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+    const isFormCtrl = tag === 'input' || tag === 'textarea' || tag === 'select';
     if (e.key === 'Escape') closeBoard();
+    if (isFormCtrl) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); if (activeIndex > 0) openBoard(activeIndex - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); if (activeIndex < verses.length - 1) openBoard(activeIndex + 1); }
     if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey) toggleManualHide();
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); document.getElementById('btnUndo').click(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); document.getElementById('btnRedo').click(); }
