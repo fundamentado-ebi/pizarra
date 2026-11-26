@@ -335,6 +335,95 @@
     flex-wrap: wrap;
   }
 
+  
+  /* Selector de Modo de Trabajo (Bíblico vs Texto Normal) */
+  .mode-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: #0c1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .mode-switch {
+    display: inline-flex;
+    background: #141c30;
+    border: 1px solid #263352;
+    border-radius: 10px;
+    padding: 3px;
+    gap: 4px;
+  }
+  .mode-btn {
+    background: transparent;
+    color: #94a3b8;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.16s ease;
+  }
+  .mode-btn:hover { color: #e2e8f0; }
+  .mode-btn.active {
+    background: var(--gold-soft);
+    color: var(--gold);
+    box-shadow: inset 0 0 0 1px rgba(245, 185, 34, 0.45);
+  }
+  .bible-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .bible-controls.hidden { display: none; }
+  .bible-select {
+    background: #141c30;
+    color: #f8fafc;
+    border: 1px solid #2c3b5e;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+  }
+  .bible-select:focus { border-color: var(--gold); }
+  .bible-status {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    background: #141c30;
+    border: 1px solid #232f4d;
+    padding: 5px 10px;
+    border-radius: 8px;
+  }
+  .bible-status.ok { color: #4ade80; border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.1); }
+  .bible-status.warn { color: #fbbf24; border-color: rgba(245,185,34,0.35); background: rgba(245,185,34,0.1); }
+  .bt-select {
+    background: rgba(255,255,255,0.08);
+    color: var(--gold);
+    border: 1px solid rgba(245,185,34,0.4);
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+  }
+  .bt-select option { background: #0f172a; color: #f8fafc; }
+  .board-overlay.theme-light .bt-select {
+    background: #f1f5f9;
+    color: #b45309;
+    border-color: #cbd5e1;
+  }
+
   .config-actions-row {
     display: flex;
     flex-wrap: wrap;
@@ -792,7 +881,7 @@
         <div class="brand-icon">📖</div>
         <div class="sb-brand-text">
           <h1>Pizarra Interactiva</h1>
-          <span>100% Offline</span>
+          <span>Biblia y Textos</span>
         </div>
       </div>
       <button class="sb-collapse-btn" id="btnCollapseSidebar" title="Contraer menú">◀</button>
@@ -835,19 +924,40 @@
       </div>
 
       <div class="config-card">
-        <h3>📄 Subir Archivo (.PDF, .MD, .TXT) o Pegar Textos</h3>
+        <h3>📄 Modo de Trabajo y Carga de Textos</h3>
+        <div class="mode-bar">
+          <div class="mode-switch" role="tablist" aria-label="Tipo de texto">
+            <button class="mode-btn active" id="btnModeBible" data-mode="bible" role="tab">📖 Texto Bíblico</button>
+            <button class="mode-btn" id="btnModeNormal" data-mode="normal" role="tab">📝 Texto Normal</button>
+          </div>
+          <div class="bible-controls" id="bibleControlsBar">
+            <label for="bibleVersionSelect" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">Versión:</label>
+            <select id="bibleVersionSelect" class="bible-select" title="Selecciona la Biblia desde la carpeta biblias/">
+              <option value="NBLA">NBLA — Nueva Biblia de las Américas</option>
+              <option value="RVR1960">RVR1960 — Reina-Valera 1960</option>
+              <option value="NVI">NVI — Nueva Versión Internacional</option>
+              <option value="NTV">NTV — Nueva Traducción Viviente</option>
+              <option value="RVC">RVC — Reina Valera Contemporánea</option>
+              <option value="DHH94I">DHH94I — Dios Habla Hoy</option>
+              <option value="DHHS94">DHHS94 — Dios Habla Hoy Estándar</option>
+              <option value="TLAI">TLAI — Traducción en Lenguaje Actual</option>
+            </select>
+            <span class="bible-status" id="bibleLoadStatus">⏳ Cargando Biblia...</span>
+          </div>
+        </div>
+
         <div class="upload-grid">
           <div class="drop-zone" id="dropZone">
             <div class="dz-icon">📄</div>
             <strong>Arrastra aquí tu archivo .PDF, .MD o .TXT</strong>
-            <span>O haz clic para seleccionarlo desde tu computador (100% sin internet)</span>
+            <span id="dropZoneHint">Acepta solo citas (español o inglés, completas o abreviadas) o cita + texto</span>
             <input type="file" id="fileInput" accept=".pdf,.md,.txt,.text" style="display:none" />
           </div>
 
           <div class="paste-box">
-            <textarea id="pasteInput" placeholder="Pega aquí versículos bíblicos o cualquier texto (separa párrafos con línea en blanco o usa Título — texto):&#10;Salmos 94:22 — Pero el SEÑOR ha sido mi baluarte, y mi Dios la roca de mi refugio.&#10;Idea Principal — Puedes cargar artículos, apuntes, citas o párrafos de cualquier tema."></textarea>
+            <textarea id="pasteInput" placeholder="Pega solo citas o cita + texto (español o inglés, completas o abreviadas):&#10;Salmos 94:22&#10;Col 1:15-17&#10;John 3:16&#10;1 Cor. 13:4-7"></textarea>
             <div class="paste-actions">
-              <span style="font-size:0.78rem;color:var(--text-muted);">Detecta automáticamente si es texto bíblico o texto general</span>
+              <span id="pasteHint" style="font-size:0.78rem;color:var(--text-muted);">Modo Bíblico: resuelve citas y rangos automáticamente desde biblias/</span>
               <div style="display:flex;gap:8px;">
                 <button class="btn" id="btnAppendPaste">➕ Agregar</button>
                 <button class="btn btn-gold" id="btnReplacePaste">📥 Cargar lista</button>
@@ -896,6 +1006,16 @@
         <button id="btnFontInc" title="Aumentar texto">A+</button>
       </div>
 
+      <select class="bt-select" id="boardVersionSelect" title="Cambiar versión bíblica en vivo" style="display:none;">
+        <option value="NBLA">NBLA</option>
+        <option value="RVR1960">RVR1960</option>
+        <option value="NVI">NVI</option>
+        <option value="NTV">NTV</option>
+        <option value="RVC">RVC</option>
+        <option value="DHH94I">DHH94I</option>
+        <option value="DHHS94">DHHS94</option>
+        <option value="TLAI">TLAI</option>
+      </select>
       <button class="bt-btn" id="btnThemeToggle" title="Alternar fondo: Pizarra Negra / Oscuro / Claro">🌑 Pizarra</button>
       <button class="bt-btn active-mode" id="btnAutoHideToggle" title="Modo Look at the Book: oculta barras automáticamente al subrayar">🎯 Auto-ocultar: SÍ</button>
       <button class="bt-btn" id="btnCopyVerse">📋 Copiar</button>
@@ -1115,39 +1235,273 @@
     verses = JSON.parse(JSON.stringify(SAMPLE_VERSES));
   }
 
-  // ===== DETECTOR Y PARSER INTELIGENTE (BÍBLICO Y TEXTO GENERAL) =====
-  const BIBLE_BOOKS = [
-    'génesis','genesis','gn','éxodo','exodo','ex','levítico','levitico','lv','números','numeros','nm',
-    'deuteronomio','dt','josué','josue','jos','jueces','jue','rut','1 samuel','2 samuel','1sa','2sa',
-    '1 reyes','2 reyes','1re','2re','1 crónicas','2 crónicas','1 cronicas','2 cronicas','1cr','2cr',
-    'esdras','esd','nehemías','nehemias','neh','ester','est','job','salmos','salmo','sal','proverbios','pr','prov',
-    'eclesiastés','eclesiastes','ec','cantares','cantar de los cantares','cant','isaías','isaias','is',
-    'jeremías','jeremias','jr','jer','lamentaciones','lm','ezequiel','ez','daniel','dn','oseas','os',
-    'joel','jl','amós','amos','am','abdías','abdias','abd','jonás','jonas','jon','miqueas','mi',
-    'nahúm','nahum','nah','habacuc','hab','sofonías','sofonias','sof','hageo','ag','zacarías','zacarias','zac',
-    'malaquías','malaquias','mal','mateo','mt','marcos','mc','mr','lucas','lc','juan','jn','hechos','hch',
-    'romanos','ro','rom','1 corintios','2 corintios','1co','2co','gálatas','galatas','ga','gál','efesios','ef',
-    'filipenses','fil','colosenses','col','1 tesalonicenses','2 tesalonicenses','1ts','2ts',
-    '1 timoteo','2 timoteo','1ti','2ti','tito','tit','filemón','filemon','flm','hebreos','heb',
-    'santiago','stg','1 pedro','2 pedro','1p','2p','1 juan','2 juan','3 juan','1jn','2jn','3jn',
-    'judas','jud','apocalipsis','ap'
+  // ===== CATÁLOGO DE BIBLIAS EN GITHUB (./biblias/) Y MODO DE TRABAJO =====
+  const BIBLES_CATALOG = {
+    NBLA:    { file: './biblias/nbla.json',    label: 'NUEVA BIBLIA DE LAS AMÉRICAS (NBLA)' },
+    RVR1960: { file: './biblias/rvr1960.json', label: 'REINA-VALERA 1960 (RVR1960)' },
+    NVI:     { file: './biblias/nvi.json',     label: 'NUEVA VERSIÓN INTERNACIONAL (NVI)' },
+    NTV:     { file: './biblias/ntv.json',     label: 'NUEVA TRADUCCIÓN VIVIENTE (NTV)' },
+    RVC:     { file: './biblias/rvc.json',     label: 'REINA VALERA CONTEMPORÁNEA (RVC)' },
+    DHH94I:  { file: './biblias/dhh94i.json',  label: 'DIOS HABLA HOY (DHH94I)' },
+    DHHS94:  { file: './biblias/dhhs94.json',  label: 'DIOS HABLA HOY ESTÁNDAR (DHHS94)' },
+    TLAI:    { file: './biblias/tlai.json',    label: 'TRADUCCIÓN EN LENGUAJE ACTUAL (TLAI)' }
+  };
+
+  let workMode = localStorage.getItem('pizarra_work_mode') || 'bible'; // 'bible' | 'normal'
+  let activeBibleVersion = localStorage.getItem('pizarra_bible_ver') || 'NBLA';
+  if (!BIBLES_CATALOG[activeBibleVersion]) activeBibleVersion = 'NBLA';
+  const bibleCache = {};
+
+  const btnModeBible = document.getElementById('btnModeBible');
+  const btnModeNormal = document.getElementById('btnModeNormal');
+  const bibleControlsBar = document.getElementById('bibleControlsBar');
+  const bibleVersionSelect = document.getElementById('bibleVersionSelect');
+  const bibleLoadStatus = document.getElementById('bibleLoadStatus');
+  const boardVersionSelect = document.getElementById('boardVersionSelect');
+  const pasteHint = document.getElementById('pasteHint');
+  const dropZoneHint = document.getElementById('dropZoneHint');
+
+  bibleVersionSelect.value = activeBibleVersion;
+
+  function setBibleStatus(text, type) {
+    bibleLoadStatus.textContent = text;
+    bibleLoadStatus.className = 'bible-status' + (type ? ' ' + type : '');
+  }
+
+  function applyWorkMode(mode) {
+    workMode = mode === 'normal' ? 'normal' : 'bible';
+    try { localStorage.setItem('pizarra_work_mode', workMode); } catch (e) {}
+    btnModeBible.classList.toggle('active', workMode === 'bible');
+    btnModeNormal.classList.toggle('active', workMode === 'normal');
+    bibleControlsBar.classList.toggle('hidden', workMode !== 'bible');
+
+    if (workMode === 'bible') {
+      pasteInput.placeholder =
+        'Pega solo citas o cita + texto (español o inglés, completas o abreviadas):\n' +
+        'Salmos 94:22\n' +
+        'Col 1:15-17\n' +
+        'John 3:16\n' +
+        '1 Cor. 13:4-7';
+      pasteHint.textContent = 'Modo Bíblico: resuelve citas en español/inglés (completas o abreviadas) desde biblias/';
+      dropZoneHint.textContent = 'Acepta solo citas (español o inglés, completas o abreviadas) o cita + texto';
+      ensureBibleLoaded(activeBibleVersion);
+    } else {
+      pasteInput.placeholder =
+        'Pega aquí cualquier texto general (separa bloques con línea en blanco o usa Título — texto):\n' +
+        'Idea Principal — Puedes cargar artículos, apuntes, citas literarias o párrafos de cualquier tema.\n\n' +
+        '# Encabezado opcional\nTexto del siguiente bloque para analizar en la pizarra.';
+      pasteHint.textContent = 'Modo Texto Normal: separa por párrafos, encabezados (#) o Título — texto';
+      dropZoneHint.textContent = 'Sube cualquier .PDF, .MD o .TXT de apuntes, artículos o lecturas generales';
+    }
+  }
+
+  btnModeBible.addEventListener('click', () => applyWorkMode('bible'));
+  btnModeNormal.addEventListener('click', () => applyWorkMode('normal'));
+
+  async function ensureBibleLoaded(verKey) {
+    if (verKey === 'LOCAL' && localBibleMap) {
+      setBibleStatus(`✅ Biblia Local (${Object.keys(localBibleMap).length.toLocaleString()} vers.)`, 'ok');
+      return localBibleMap;
+    }
+    const entry = BIBLES_CATALOG[verKey];
+    if (!entry) return localBibleMap;
+    if (bibleCache[verKey]) {
+      localBibleMap = bibleCache[verKey];
+      setBibleStatus(`✅ ${verKey} lista (${Object.keys(localBibleMap).length.toLocaleString()} vers.)`, 'ok');
+      return localBibleMap;
+    }
+    setBibleStatus(`⏳ Cargando ${verKey}...`, '');
+    try {
+      const res = await fetch(entry.file);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const raw = await res.json();
+      const map = {};
+      Object.keys(raw).forEach(k => { map[stripAccents(k).toLowerCase().trim()] = raw[k]; });
+      bibleCache[verKey] = map;
+      localBibleMap = map;
+      setBibleStatus(`✅ ${verKey} lista (${Object.keys(map).length.toLocaleString()} vers.)`, 'ok');
+      return map;
+    } catch (err) {
+      setBibleStatus(`⚠️ No se pudo autocargar ${verKey} (usa 📚 Biblia Local si estás sin servidor)`, 'warn');
+      return localBibleMap;
+    }
+  }
+
+  bibleVersionSelect.addEventListener('change', async () => {
+    activeBibleVersion = bibleVersionSelect.value;
+    try { localStorage.setItem('pizarra_bible_ver', activeBibleVersion); } catch (e) {}
+    await ensureBibleLoaded(activeBibleVersion);
+  });
+
+  // ===== DICCIONARIO COMPLETO DE LIBROS BÍBLICOS (ESPAÑOL + INGLÉS, COMPLETOS Y ABREVIADOS) =====
+  function stripAccents(s) {
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  const BOOK_CATALOG = [
+    { id:'genesis', display:'Génesis', jsonKeys:['genesis'], aliases:['genesis','gen','gn','ge'] },
+    { id:'exodo', display:'Éxodo', jsonKeys:['exodo'], aliases:['exodo','exodus','exod','exo','ex'] },
+    { id:'levitico', display:'Levítico', jsonKeys:['levitico'], aliases:['levitico','leviticus','lev','lv','le'] },
+    { id:'numeros', display:'Números', jsonKeys:['numeros'], aliases:['numeros','numbers','num','nm','nu','nb'] },
+    { id:'deuteronomio', display:'Deuteronomio', jsonKeys:['deuteronomio'], aliases:['deuteronomio','deuteronomy','deut','deu','dt'] },
+    { id:'josue', display:'Josué', jsonKeys:['josue'], aliases:['josue','joshua','josh','jos','jsh'] },
+    { id:'jueces', display:'Jueces', jsonKeys:['jueces'], aliases:['jueces','judges','judg','jdg','jg','jue','jc','jz'] },
+    { id:'rut', display:'Rut', jsonKeys:['rut'], aliases:['rut','ruth','rth','ru','rt'] },
+    { id:'1 samuel', display:'1 Samuel', jsonKeys:['1 samuel'], aliases:['1 samuel','1samuel','1 sam','1sam','1 sa','1sa','1 sm','1sm','1 s','1s'] },
+    { id:'2 samuel', display:'2 Samuel', jsonKeys:['2 samuel'], aliases:['2 samuel','2samuel','2 sam','2sam','2 sa','2sa','2 sm','2sm','2 s','2s'] },
+    { id:'1 reyes', display:'1 Reyes', jsonKeys:['1 reyes'], aliases:['1 reyes','1reyes','1 rey','1rey','1 re','1re','1 r','1r','1 kings','1kings','1 kgs','1kgs','1 ki','1ki','1 k','1k'] },
+    { id:'2 reyes', display:'2 Reyes', jsonKeys:['2 reyes'], aliases:['2 reyes','2reyes','2 rey','2rey','2 re','2re','2 r','2r','2 kings','2kings','2 kgs','2kgs','2 ki','2ki','2 k','2k'] },
+    { id:'1 cronicas', display:'1 Crónicas', jsonKeys:['1 cronicas'], aliases:['1 cronicas','1cronicas','1 cron','1cron','1 cro','1cro','1 cr','1cr','1 chronicles','1chronicles','1 chron','1chron','1 chr','1chr','1 ch','1ch'] },
+    { id:'2 cronicas', display:'2 Crónicas', jsonKeys:['2 cronicas'], aliases:['2 cronicas','2cronicas','2 cron','2cron','2 cro','2cro','2 cr','2cr','2 chronicles','2chronicles','2 chron','2chron','2 chr','2chr','2 ch','2ch'] },
+    { id:'esdras', display:'Esdras', jsonKeys:['esdras'], aliases:['esdras','esd','ezra','ezr'] },
+    { id:'nehemias', display:'Nehemías', jsonKeys:['nehemias'], aliases:['nehemias','nehemiah','neh','ne'] },
+    { id:'ester', display:'Ester', jsonKeys:['ester'], aliases:['ester','esther','esth','est','es'] },
+    { id:'job', display:'Job', jsonKeys:['job'], aliases:['job','jb'] },
+    { id:'salmos', display:'Salmos', jsonKeys:['salmos','salmo'], aliases:['salmos','salmo','sal','sl','psalms','psalm','psa','psm','pss','ps'] },
+    { id:'proverbios', display:'Proverbios', jsonKeys:['proverbios'], aliases:['proverbios','proverbs','prov','pro','prv','pr'] },
+    { id:'eclesiastes', display:'Eclesiastés', jsonKeys:['eclesiastes'], aliases:['eclesiastes','ecclesiastes','eccl','ecc','ecl','ec','qoh'] },
+    { id:'cantares', display:'Cantares', jsonKeys:['cantares','cantar de los cantares'], aliases:['cantares','cantar de los cantares','cantar','cant','cnt','ct','song of solomon','song of songs','song of sol','song','sos','sng','sg','ss','canticles'] },
+    { id:'isaias', display:'Isaías', jsonKeys:['isaias'], aliases:['isaias','isaiah','isa','is'] },
+    { id:'jeremias', display:'Jeremías', jsonKeys:['jeremias'], aliases:['jeremias','jeremiah','jer','jr','je'] },
+    { id:'lamentaciones', display:'Lamentaciones', jsonKeys:['lamentaciones'], aliases:['lamentaciones','lamentations','lam','lm','la'] },
+    { id:'ezequiel', display:'Ezequiel', jsonKeys:['ezequiel'], aliases:['ezequiel','ezekiel','ezek','eze','ezk','ez'] },
+    { id:'daniel', display:'Daniel', jsonKeys:['daniel'], aliases:['daniel','dan','dn','da'] },
+    { id:'oseas', display:'Oseas', jsonKeys:['oseas'], aliases:['oseas','hosea','hos','os','ho'] },
+    { id:'joel', display:'Joel', jsonKeys:['joel'], aliases:['joel','jl','joe'] },
+    { id:'amos', display:'Amós', jsonKeys:['amos'], aliases:['amos','am'] },
+    { id:'abdias', display:'Abdías', jsonKeys:['abdias'], singleChapter:true, aliases:['abdias','abd','ab','obadiah','obad','oba','ob'] },
+    { id:'jonas', display:'Jonás', jsonKeys:['jonas'], aliases:['jonas','jonah','jon','jnh'] },
+    { id:'miqueas', display:'Miqueas', jsonKeys:['miqueas'], aliases:['miqueas','micah','mic','miq','mi'] },
+    { id:'nahum', display:'Nahúm', jsonKeys:['nahum'], aliases:['nahum','nah','na','nam'] },
+    { id:'habacuc', display:'Habacuc', jsonKeys:['habacuc'], aliases:['habacuc','habakkuk','hab','hb'] },
+    { id:'sofonias', display:'Sofonías', jsonKeys:['sofonias'], aliases:['sofonias','sof','zephaniah','zeph','zep','zp'] },
+    { id:'hageo', display:'Hageo', jsonKeys:['hageo'], aliases:['hageo','hag','hg','ag','ageo','haggai'] },
+    { id:'zacarias', display:'Zacarías', jsonKeys:['zacarias'], aliases:['zacarias','zac','zc','zechariah','zech','zec'] },
+    { id:'malaquias', display:'Malaquías', jsonKeys:['malaquias'], aliases:['malaquias','malachi','mal','ml'] },
+    { id:'mateo', display:'Mateo', jsonKeys:['mateo','s. mateo','san mateo'], aliases:['mateo','s mateo','san mateo','mat','mt','matthew','matt'] },
+    { id:'marcos', display:'Marcos', jsonKeys:['marcos','s. marcos','san marcos'], aliases:['marcos','s marcos','san marcos','mar','mc','mr','mark','mrk','mk'] },
+    { id:'lucas', display:'Lucas', jsonKeys:['lucas','s. lucas','san lucas'], aliases:['lucas','s lucas','san lucas','luc','lc','luke','luk','lk'] },
+    { id:'juan', display:'Juan', jsonKeys:['juan','s. juan','san juan'], aliases:['juan','s juan','san juan','jn','john','joh','jhn'] },
+    { id:'hechos', display:'Hechos', jsonKeys:['hechos','hechos de los apostoles'], aliases:['hechos','hechos de los apostoles','hch','hchos','hech','hc','acts','act','ac'] },
+    { id:'romanos', display:'Romanos', jsonKeys:['romanos'], aliases:['romanos','romans','rom','ro','rm'] },
+    { id:'1 corintios', display:'1 Corintios', jsonKeys:['1 corintios'], aliases:['1 corintios','1corintios','1 cor','1cor','1 co','1co','1 corinthians','1corinthians'] },
+    { id:'2 corintios', display:'2 Corintios', jsonKeys:['2 corintios'], aliases:['2 corintios','2corintios','2 cor','2cor','2 co','2co','2 corinthians','2corinthians'] },
+    { id:'galatas', display:'Gálatas', jsonKeys:['galatas'], aliases:['galatas','galatians','gal','ga','gl'] },
+    { id:'efesios', display:'Efesios', jsonKeys:['efesios'], aliases:['efesios','ef','efe','ephesians','eph','ep'] },
+    { id:'filipenses', display:'Filipenses', jsonKeys:['filipenses'], aliases:['filipenses','fil','flp','philippians','phil','php','ph'] },
+    { id:'colosenses', display:'Colosenses', jsonKeys:['colosenses'], aliases:['colosenses','colossians','col'] },
+    { id:'1 tesalonicenses', display:'1 Tesalonicenses', jsonKeys:['1 tesalonicenses'], aliases:['1 tesalonicenses','1tesalonicenses','1 tes','1tes','1 ts','1ts','1 thessalonians','1thessalonians','1 thess','1thess','1 thes','1thes','1 th','1th'] },
+    { id:'2 tesalonicenses', display:'2 Tesalonicenses', jsonKeys:['2 tesalonicenses'], aliases:['2 tesalonicenses','2tesalonicenses','2 tes','2tes','2 ts','2ts','2 thessalonians','2thessalonians','2 thess','2thess','2 thes','2thes','2 th','2th'] },
+    { id:'1 timoteo', display:'1 Timoteo', jsonKeys:['1 timoteo'], aliases:['1 timoteo','1timoteo','1 tim','1tim','1 ti','1ti','1 tm','1tm','1 timothy','1timothy'] },
+    { id:'2 timoteo', display:'2 Timoteo', jsonKeys:['2 timoteo'], aliases:['2 timoteo','2timoteo','2 tim','2tim','2 ti','2ti','2 tm','2tm','2 timothy','2timothy'] },
+    { id:'tito', display:'Tito', jsonKeys:['tito'], aliases:['tito','tit','ti','titus'] },
+    { id:'filemon', display:'Filemón', jsonKeys:['filemon'], singleChapter:true, aliases:['filemon','flm','film','philemon','phlm','phm','pm'] },
+    { id:'hebreos', display:'Hebreos', jsonKeys:['hebreos'], aliases:['hebreos','hebrews','heb','he'] },
+    { id:'santiago', display:'Santiago', jsonKeys:['santiago'], aliases:['santiago','stg','sant','snt','james','jas','jam','jm'] },
+    { id:'1 pedro', display:'1 Pedro', jsonKeys:['1 pedro'], aliases:['1 pedro','1pedro','1 ped','1ped','1 pe','1pe','1 p','1p','1 peter','1peter','1 pet','1pet','1 pt','1pt'] },
+    { id:'2 pedro', display:'2 Pedro', jsonKeys:['2 pedro'], aliases:['2 pedro','2pedro','2 ped','2ped','2 pe','2pe','2 p','2p','2 peter','2peter','2 pet','2pet','2 pt','2pt'] },
+    { id:'1 juan', display:'1 Juan', jsonKeys:['1 juan'], aliases:['1 juan','1juan','1 jn','1jn','1 john','1john','1 joh','1joh','1 jhn','1jhn'] },
+    { id:'2 juan', display:'2 Juan', jsonKeys:['2 juan'], singleChapter:true, aliases:['2 juan','2juan','2 jn','2jn','2 john','2john','2 joh','2joh','2 jhn','2jhn'] },
+    { id:'3 juan', display:'3 Juan', jsonKeys:['3 juan'], singleChapter:true, aliases:['3 juan','3juan','3 jn','3jn','3 john','3john','3 joh','3joh','3 jhn','3jhn'] },
+    { id:'judas', display:'Judas', jsonKeys:['judas'], singleChapter:true, aliases:['judas','jud','jd','jude'] },
+    { id:'apocalipsis', display:'Apocalipsis', jsonKeys:['apocalipsis'], aliases:['apocalipsis','apoc','ap','apo','revelation','rev','re','rv'] }
   ];
 
-  const REF_REGEX = /^((?:[1-3]\s+)?[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+de\s+los\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+|\s+de\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)?)\s+(\d+:\d+(?:[-–]\d+)?)\s*(?:\(([A-Z0-9]{2,8})\))?\s*(?:[—–:\-]\s*)?(.*)$/;
+  const BOOK_ALIAS_MAP = {};
+  const BOOK_BY_ID = {};
+  BOOK_CATALOG.forEach(b => {
+    BOOK_BY_ID[b.id] = b;
+    b.aliases.forEach(a => { BOOK_ALIAS_MAP[a] = b; });
+  });
+
+  function resolveBookEntry(rawBook) {
+    let n = stripAccents(rawBook).toLowerCase().replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+    // Normalizar números romanos y ordinales al inicio (I, II, III, 1a, 1ª, 2da, etc.)
+    n = n.replace(/^iii\s+/, '3 ').replace(/^ii\s+/, '2 ').replace(/^i\s+/, '1 ');
+    n = n.replace(/^([1-3])(?:a|ª|o|º|ra|da|er|st|nd|rd)\s+(?:de\s+)?/, '$1 ');
+    n = n.replace(/^([1-3])\s+de\s+/, '$1 ');
+    if (BOOK_ALIAS_MAP[n]) return BOOK_ALIAS_MAP[n];
+    // Intentar sin espacios tras el número (ej. "1cor")
+    const noSp = n.replace(/^([1-3])\s+/, '$1');
+    if (BOOK_ALIAS_MAP[noSp]) return BOOK_ALIAS_MAP[noSp];
+    return null;
+  }
+
+  // Regex amplio para libros en español o inglés (completos o abreviados, con o sin punto, romanos, 1-3)
+  const REF_REGEX = /^((?:(?:[1-3](?:[aªoº]|ra|da|er|st|nd|rd)?|I{1,3})\s*(?:de\s+)?)?(?:S\.?\s+|San\s+)?[A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\.?\s+(?:de\s+los\s+|de\s+|of\s+)?[A-Za-zÁÉÍÓÚÑáéíóúñ]+)*\.?)\s+(\d+)(?:[:.](\d+)(?:\s*[-–]\s*(\d+))?)?(?:\s*\(([A-Za-z0-9]{2,10})\))?\s*(?:[—–:\-]\s*)?(.*)$/;
   const TITLE_TEXT_REGEX = /^([^\n—–:]{2,70})\s*(?:[—–]|:(?=\s))\s+(.+)$/;
 
-  function isKnownBibleBook(name) {
-    const norm = name.toLowerCase().replace(/\./g, '').trim();
-    return BIBLE_BOOKS.includes(norm);
+  function parseBibleRefHeader(line) {
+    const m = line.match(REF_REGEX);
+    if (!m) return null;
+    const book = resolveBookEntry(m[1]);
+    if (!book) return null;
+
+    let chapter = parseInt(m[2], 10);
+    let vStart = m[3] ? parseInt(m[3], 10) : null;
+    let vEnd = m[4] ? parseInt(m[4], 10) : vStart;
+
+    // Libros de un solo capítulo (ej. "Judas 24" o "Filemón 6")
+    if (vStart === null) {
+      if (book.singleChapter) {
+        vStart = chapter;
+        vEnd = chapter;
+        chapter = 1;
+      } else {
+        return null; // Solo libro + capítulo sin versículo
+      }
+    }
+    if (vEnd < vStart) vEnd = vStart;
+
+    const ver = (m[5] || '').trim().toUpperCase();
+    const body = (m[6] || '').trim();
+    const rangeStr = vEnd > vStart ? `${chapter}:${vStart}-${vEnd}` : `${chapter}:${vStart}`;
+    return {
+      book,
+      chapter,
+      vStart,
+      vEnd,
+      refDisplay: `${book.display} ${rangeStr}`,
+      versionTag: ver,
+      body
+    };
+  }
+
+  function lookupBiblePassage(bibleMap, book, chapter, vStart, vEnd) {
+    if (!bibleMap || !book) return '';
+    const keys = book.jsonKeys || [book.id];
+
+    for (const bk of keys) {
+      if (vEnd > vStart) {
+        // Primero verificar si existe clave exacta de rango (ej. en DHH/TLAI)
+        const exactRange = bibleMap[`${bk} ${chapter}:${vStart}-${vEnd}`];
+        if (exactRange) return exactRange;
+
+        const parts = [];
+        let lastText = '';
+        for (let v = vStart; v <= vEnd; v++) {
+          const txt = bibleMap[`${bk} ${chapter}:${v}`];
+          if (txt && txt !== lastText) {
+            parts.push(v === vStart ? txt : `${v} ${txt}`);
+            lastText = txt;
+          }
+        }
+        if (parts.length > 0) return parts.join(' ');
+      } else {
+        const single = bibleMap[`${bk} ${chapter}:${vStart}`];
+        if (single) return single;
+      }
+    }
+    return '';
   }
 
   function formatVersionLabel(ver) {
     if (!ver) return '';
     const v = ver.toUpperCase();
+    if (BIBLES_CATALOG[v]) return BIBLES_CATALOG[v].label;
     if (v === 'LBLA') return 'LA BIBLIA DE LAS AMÉRICAS (LBLA)';
-    if (v === 'RV60' || v === 'RVR60') return 'REINA-VALERA 1960 (RV60)';
-    if (v === 'NBLA') return 'NUEVA BIBLIA DE LAS AMÉRICAS (NBLA)';
-    if (v === 'NVI') return 'NUEVA VERSIÓN INTERNACIONAL (NVI)';
+    if (v === 'RV60' || v === 'RVR60') return 'REINA-VALERA 1960 (RVR1960)';
+    if (v === 'LOCAL') return 'BIBLIA LOCAL (.JSON)';
     return v;
   }
 
@@ -1163,7 +1517,6 @@
     for (let i = 0; i < rawLines.length; i++) {
       const line = rawLines[i].trim();
 
-      // Línea vacía: cierra el bloque actual (separa párrafos de textos generales)
       if (!line) {
         if (current) {
           result.push(current);
@@ -1172,7 +1525,6 @@
         continue;
       }
 
-      // Encabezado Markdown (# Título)
       const hMatch = line.match(/^#{1,6}\s+(.+)$/);
       if (hMatch) {
         if (current) { result.push(current); current = null; }
@@ -1180,34 +1532,43 @@
         continue;
       }
 
-      // 1. Verificar si es una cita bíblica real
-      const bm = line.match(REF_REGEX);
-      if (bm && isKnownBibleBook(bm[1])) {
-        if (current) result.push(current);
-        pendingHeading = '';
-        const ref = (bm[1].trim() + ' ' + bm[2].trim()).trim();
-        const ver = (bm[3] || 'LBLA').trim();
-        let body = (bm[4] || '').trim();
-        const numMatch = bm[2].match(/:(\d+)/);
-        const vNum = numMatch ? numMatch[1] : '';
-        if (!body && localBibleMap) {
-          const found = localBibleMap[ref.toLowerCase()];
-          if (found) body = found;
+      // 1. Si estamos en MODO TEXTO BÍBLICO, detectar citas (español o inglés, completas o abreviadas)
+      if (workMode === 'bible') {
+        const parsedRef = parseBibleRefHeader(line);
+        if (parsedRef) {
+          if (current) result.push(current);
+          pendingHeading = '';
+          const ver = parsedRef.versionTag || activeBibleVersion;
+          let body = parsedRef.body;
+          if (!body) {
+            const targetMap = (parsedRef.versionTag && bibleCache[parsedRef.versionTag]) || localBibleMap;
+            body = lookupBiblePassage(targetMap, parsedRef.book, parsedRef.chapter, parsedRef.vStart, parsedRef.vEnd);
+          }
+          current = {
+            id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+            ref: parsedRef.refDisplay,
+            version: ver,
+            isBiblical: true,
+            canonBookId: parsedRef.book.id,
+            chapter: parsedRef.chapter,
+            vStart: parsedRef.vStart,
+            vEnd: parsedRef.vEnd,
+            verseNum: String(parsedRef.vStart),
+            text: body,
+            wordMarks: {},
+            drawData: null
+          };
+          continue;
         }
-        current = {
-          id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-          ref, version: ver, isBiblical: true, verseNum: vNum, text: body, wordMarks: {}, drawData: null
-        };
-        continue;
       }
 
-      // 2. Si ya hay un bloque abierto, continuar agregando texto al mismo bloque
+      // 2. Continuación de bloque abierto
       if (current) {
         current.text = (current.text ? current.text + ' ' : '') + line;
         continue;
       }
 
-      // 3. Texto NO bíblico: verificar si viene con "Título — texto" o "Título: texto"
+      // 3. Texto normal (o línea sin cita en modo texto normal)
       const tm = !pendingHeading ? line.match(TITLE_TEXT_REGEX) : null;
       if (tm) {
         current = {
@@ -1228,7 +1589,7 @@
 
     result.forEach(v => {
       if (v.isBiblical) {
-        if (!v.text) v.text = '(Solo referencia cargada — pega el texto o carga una Biblia local .json)';
+        if (!v.text) v.text = `(No se encontró el texto en ${v.version} — verifica la cita o carga una Biblia .json)`;
         else v.text = v.text.replace(/^\d+\s+/, '');
       }
     });
@@ -1293,6 +1654,7 @@
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
     try {
+      if (workMode === 'bible') await ensureBibleLoaded(activeBibleVersion);
       let text = '';
       if (ext === 'pdf') {
         showToast('Leyendo PDF sin internet...');
@@ -1327,7 +1689,8 @@
     if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
   });
 
-  document.getElementById('btnReplacePaste').addEventListener('click', () => {
+  document.getElementById('btnReplacePaste').addEventListener('click', async () => {
+    if (workMode === 'bible') await ensureBibleLoaded(activeBibleVersion);
     const parsed = parseVersesFromText(pasteInput.value);
     if (!parsed.length) return showToast('Pega al menos un texto o versículo primero.');
     verses = parsed;
@@ -1337,7 +1700,8 @@
     showToast(`✅ Lista cargada (${parsed.length} elementos)`);
   });
 
-  document.getElementById('btnAppendPaste').addEventListener('click', () => {
+  document.getElementById('btnAppendPaste').addEventListener('click', async () => {
+    if (workMode === 'bible') await ensureBibleLoaded(activeBibleVersion);
     const parsed = parseVersesFromText(pasteInput.value);
     if (!parsed.length) return showToast('Pega al menos un texto o versículo primero.');
     verses = verses.concat(parsed);
@@ -1369,9 +1733,20 @@
     if (!f) return;
     try {
       const obj = JSON.parse(await f.text());
-      localBibleMap = {};
-      Object.keys(obj).forEach(k => { localBibleMap[k.toLowerCase().trim()] = obj[k]; });
-      showToast(`📚 Biblia local cargada (${Object.keys(localBibleMap).length} elementos)`);
+      const map = {};
+      Object.keys(obj).forEach(k => { map[stripAccents(k).toLowerCase().trim()] = obj[k]; });
+      localBibleMap = map;
+      bibleCache['LOCAL'] = map;
+      if (!bibleVersionSelect.querySelector('option[value="LOCAL"]')) {
+        const opt = document.createElement('option');
+        opt.value = 'LOCAL';
+        opt.textContent = 'LOCAL — ' + f.name;
+        bibleVersionSelect.appendChild(opt);
+      }
+      activeBibleVersion = 'LOCAL';
+      bibleVersionSelect.value = 'LOCAL';
+      setBibleStatus(`✅ Biblia Local (${Object.keys(map).length.toLocaleString()} vers.)`, 'ok');
+      showToast(`📚 Biblia local cargada (${Object.keys(map).length.toLocaleString()} versículos)`);
     } catch (err) { showToast('Archivo JSON inválido.'); }
     bibleJsonInput.value = '';
   });
@@ -1401,6 +1776,40 @@
       }
     } catch (err) { showToast('No se pudo leer el archivo de sesión.'); }
     sessionJsonInput.value = '';
+  });
+
+  // Cambio de versión en vivo dentro de la pizarra
+  boardVersionSelect.addEventListener('change', async () => {
+    if (activeIndex < 0 || !verses[activeIndex]) return;
+    const v = verses[activeIndex];
+    const newVer = boardVersionSelect.value;
+    let book = v.canonBookId ? BOOK_BY_ID[v.canonBookId] : null;
+    let ch = v.chapter, vs = v.vStart, ve = v.vEnd;
+    if (!book) {
+      const parsed = parseBibleRefHeader(v.ref);
+      if (parsed) {
+        book = parsed.book; ch = parsed.chapter; vs = parsed.vStart; ve = parsed.vEnd;
+        v.canonBookId = book.id; v.chapter = ch; v.vStart = vs; v.vEnd = ve;
+      }
+    }
+    if (!book) return;
+    showToast(`⏳ Cambiando a ${newVer}...`);
+    const map = await ensureBibleLoaded(newVer);
+    const newText = lookupBiblePassage(map, book, ch, vs, ve);
+    if (!newText) {
+      showToast(`⚠️ Pasaje no encontrado en ${newVer}`);
+      boardVersionSelect.value = v.version || activeBibleVersion;
+      return;
+    }
+    v.text = newText;
+    v.version = newVer;
+    v.wordMarks = {};
+    btSub.textContent = `${formatVersionLabel(newVer)} · PIZARRA INTERACTIVA`;
+    stageVer.textContent = newVer;
+    stageVer.style.display = 'inline-block';
+    renderVerseTokens(v);
+    saveState();
+    showToast(`✅ Mostrando ${v.ref} (${newVer})`);
   });
 
   // ===== MODO LOOK AT THE BOOK (AUTO-OCULTAR INTELIGENTE + MANUAL) =====
@@ -1591,6 +2000,13 @@
     } else {
       stageVer.textContent = '';
       stageVer.style.display = 'none';
+    }
+    const isBib = Boolean(v.isBiblical || parseBibleRefHeader(v.ref));
+    if (isBib) {
+      boardVersionSelect.style.display = 'inline-block';
+      boardVersionSelect.value = BIBLES_CATALOG[v.version] ? v.version : activeBibleVersion;
+    } else {
+      boardVersionSelect.style.display = 'none';
     }
     renderVerseTokens(v);
 
@@ -1834,6 +2250,7 @@
 
   loadState();
   renderList();
+  applyWorkMode(workMode);
 })();
 </script>
 </body>
