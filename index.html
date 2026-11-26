@@ -566,22 +566,24 @@
   .board-overlay.theme-light .stage-ver-pill { background: #e2e8f0; color: #334155; }
   .board-overlay.theme-light .verse-num { color: #b45309; }
 
-  /* Cabecera flotante superior */
+  /* Cabecera flotante superior en 1 sola línea limpia */
   .board-topbar {
     position: fixed;
-    top: 12px;
+    top: 10px;
     left: 16px;
     right: 16px;
     z-index: 35;
     background: rgba(15, 20, 34, 0.94);
+    backdrop-filter: blur(8px);
     border: 1px solid #242e47;
-    border-radius: 14px;
-    padding: 10px 16px;
+    border-radius: 12px;
+    padding: 7px 12px;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     transition: opacity 0.25s ease, transform 0.25s ease;
   }
 
@@ -602,35 +604,68 @@
     transform: translate(-50%, 18px);
   }
 
-  .bt-left { display: flex; align-items: center; gap: 12px; }
+  .bt-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    flex-shrink: 1;
+  }
   .bt-book-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
     background: rgba(245, 185, 34, 0.14);
     border: 1px solid rgba(245, 185, 34, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--gold);
-    font-size: 1rem;
+    font-size: 0.9rem;
+    flex-shrink: 0;
   }
-  .bt-title { font-size: 1.02rem; font-weight: 700; color: #fff; line-height: 1.2; }
-  .bt-sub { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); text-transform: uppercase; }
+  .bt-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bt-sub { display: none; }
 
-  .bt-right { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+  .bt-right {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .bt-right::-webkit-scrollbar { display: none; }
+  .bt-sep {
+    width: 1px;
+    height: 18px;
+    background: #263250;
+    margin: 0 2px;
+    flex-shrink: 0;
+  }
   .bt-btn {
     background: #172036;
     color: #e2e8f0;
     border: 1px solid #293554;
-    border-radius: 9px;
-    padding: 6px 11px;
-    font-size: 0.8rem;
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 0.76rem;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: all 0.15s ease;
   }
   .bt-btn:hover { background: #233050; border-color: #3e5282; color: #fff; }
@@ -651,35 +686,36 @@
     align-items: center;
     background: #172036;
     border: 1px solid #293554;
-    border-radius: 9px;
+    border-radius: 8px;
     overflow: hidden;
+    flex-shrink: 0;
   }
   .font-ctrl button {
     background: transparent;
     border: none;
     color: #e2e8f0;
-    padding: 6px 9px;
-    font-size: 0.8rem;
+    padding: 5px 8px;
+    font-size: 0.76rem;
     font-weight: 700;
     cursor: pointer;
   }
   .font-ctrl button:hover { background: #233050; }
   .font-ctrl span {
-    font-size: 0.76rem;
+    font-size: 0.72rem;
     color: #94a3b8;
-    padding: 0 6px;
-    min-width: 40px;
+    padding: 0 4px;
+    min-width: 34px;
     text-align: center;
   }
 
-  /* Lienzo central 100% libre de distracciones (con scroll seguro para textos largos) */
+  /* Lienzo central 100% libre de distracciones (con margen superior amplio para nunca solapar la barra) */
   .board-stage {
     position: relative;
     flex: 1;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 76px 44px 128px;
+    padding: 82px 44px 128px;
     overflow: auto;
   }
 
@@ -1017,15 +1053,14 @@
   <div class="board-topbar" id="boardTopBar">
     <div class="bt-left">
       <div class="bt-book-icon">📖</div>
-      <div>
-        <div class="bt-title" id="btRef">Salmos 94:22</div>
-        <div class="bt-sub" id="btSub">PIZARRA INTERACTIVA</div>
-      </div>
+      <div class="bt-title" id="btRef">Salmos 94:22</div>
+      <div class="bt-sub" id="btSub"></div>
     </div>
 
     <div class="bt-right">
       <button class="bt-btn" id="btnPrevVerse" title="Texto anterior">←</button>
       <button class="bt-btn" id="btnNextVerse" title="Siguiente texto">→</button>
+      <div class="bt-sep"></div>
 
       <div class="font-ctrl">
         <button id="btnFontDec" title="Reducir texto">A-</button>
@@ -1043,13 +1078,17 @@
         <option value="DHHS94">DHHS94</option>
         <option value="TLAI">TLAI</option>
       </select>
+      <div class="bt-sep"></div>
+
       <button class="bt-btn" id="btnThemeToggle" title="Alternar fondo: Pizarra Negra / Oscuro / Claro">🌑 Pizarra</button>
-      <button class="bt-btn active-mode" id="btnAutoHideToggle" title="Modo Look at the Book: oculta barras automáticamente al subrayar">🎯 Auto-ocultar: SÍ</button>
-      <button class="bt-btn" id="btnCopyVerse">📋 Copiar</button>
-      <button class="bt-btn" id="btnSavePng">⬇ PNG</button>
+      <button class="bt-btn active-mode" id="btnAutoHideToggle" title="Modo Look at the Book: oculta barras automáticamente al subrayar">🎯 Auto</button>
+      <div class="bt-sep"></div>
+
+      <button class="bt-btn" id="btnCopyVerse" title="Copiar texto">📋</button>
+      <button class="bt-btn" id="btnSavePng" title="Guardar como imagen PNG">⬇ PNG</button>
       <button class="bt-btn" id="btnFullscreen" title="Pantalla completa">⛶</button>
-      <button class="bt-btn" id="btnHideBars" title="Ocultar manualmente (Tecla H)">👁 Ocultar</button>
-      <button class="bt-btn bt-btn-close" id="btnCloseBoard">✕ Cerrar (ESC)</button>
+      <button class="bt-btn" id="btnHideBars" title="Ocultar barras manualmente (Tecla H)">👁</button>
+      <button class="bt-btn bt-btn-close" id="btnCloseBoard" title="Cerrar pizarra (ESC)">✕ ESC</button>
     </div>
   </div>
 
@@ -2037,7 +2076,7 @@
 
   btnAutoHideToggle.addEventListener('click', () => {
     autoHideEnabled = !autoHideEnabled;
-    btnAutoHideToggle.textContent = autoHideEnabled ? '🎯 Auto-ocultar: SÍ' : '📌 Barras Fijas';
+    btnAutoHideToggle.textContent = autoHideEnabled ? '🎯 Auto' : '📌 Fijas';
     btnAutoHideToggle.classList.toggle('active-mode', autoHideEnabled);
     if (!autoHideEnabled) {
       clearTimeout(hideTimer);
