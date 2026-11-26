@@ -672,14 +672,14 @@
     text-align: center;
   }
 
-  /* Lienzo central 100% libre de distracciones */
+  /* Lienzo central 100% libre de distracciones (con scroll seguro para textos largos) */
   .board-stage {
     position: relative;
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 40px 44px;
+    padding: 76px 44px 128px;
     overflow: auto;
   }
 
@@ -688,7 +688,14 @@
     z-index: 10;
     max-width: 960px;
     width: 100%;
-    padding: 20px 10px;
+    margin: auto 0;
+    padding: 16px 10px;
+  }
+  .verse-line {
+    margin-bottom: 0.48em;
+  }
+  .verse-line:last-child {
+    margin-bottom: 0;
   }
   .stage-ref-row {
     display: flex;
@@ -744,10 +751,9 @@
 
   #drawCanvas {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
     z-index: 20;
-    width: 100%;
-    height: 100%;
     touch-action: none;
   }
 
@@ -942,7 +948,23 @@
               <option value="DHHS94">DHHS94 — Dios Habla Hoy Estándar</option>
               <option value="TLAI">TLAI — Traducción en Lenguaje Actual</option>
             </select>
+            <label for="bibleChunkSelect" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">Bloques:</label>
+            <select id="bibleChunkSelect" class="bible-select" title="Cómo dividir pasajes de varios versículos">
+              <option value="auto3">Auto (máx. 3 versos/bloque)</option>
+              <option value="1">1 versículo por bloque</option>
+              <option value="2">2 versículos por bloque</option>
+              <option value="4">4 versículos por bloque</option>
+              <option value="all">Pasaje completo (sin dividir)</option>
+            </select>
             <span class="bible-status" id="bibleLoadStatus">⏳ Cargando Biblia...</span>
+          </div>
+          <div class="bible-controls hidden" id="normalControlsBar">
+            <label for="normalSplitSelect" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">Dividir texto:</label>
+            <select id="normalSplitSelect" class="bible-select" title="Cómo dividir textos largos en bloques cómodos">
+              <option value="natural">Auto (bloques naturales por puntuación)</option>
+              <option value="sentence">Por oración (cada punto)</option>
+              <option value="none">Por párrafo (sin dividir)</option>
+            </select>
           </div>
         </div>
 
@@ -1250,18 +1272,34 @@
   let workMode = localStorage.getItem('pizarra_work_mode') || 'bible'; // 'bible' | 'normal'
   let activeBibleVersion = localStorage.getItem('pizarra_bible_ver') || 'NBLA';
   if (!BIBLES_CATALOG[activeBibleVersion]) activeBibleVersion = 'NBLA';
+  let bibleChunkMode = localStorage.getItem('pizarra_bible_chunk') || 'auto3';
+  let normalSplitMode = localStorage.getItem('pizarra_normal_split') || 'natural';
   const bibleCache = {};
 
   const btnModeBible = document.getElementById('btnModeBible');
   const btnModeNormal = document.getElementById('btnModeNormal');
   const bibleControlsBar = document.getElementById('bibleControlsBar');
+  const normalControlsBar = document.getElementById('normalControlsBar');
   const bibleVersionSelect = document.getElementById('bibleVersionSelect');
+  const bibleChunkSelect = document.getElementById('bibleChunkSelect');
+  const normalSplitSelect = document.getElementById('normalSplitSelect');
   const bibleLoadStatus = document.getElementById('bibleLoadStatus');
   const boardVersionSelect = document.getElementById('boardVersionSelect');
   const pasteHint = document.getElementById('pasteHint');
   const dropZoneHint = document.getElementById('dropZoneHint');
 
   bibleVersionSelect.value = activeBibleVersion;
+  bibleChunkSelect.value = bibleChunkMode;
+  normalSplitSelect.value = normalSplitMode;
+
+  bibleChunkSelect.addEventListener('change', () => {
+    bibleChunkMode = bibleChunkSelect.value;
+    try { localStorage.setItem('pizarra_bible_chunk', bibleChunkMode); } catch (e) {}
+  });
+  normalSplitSelect.addEventListener('change', () => {
+    normalSplitMode = normalSplitSelect.value;
+    try { localStorage.setItem('pizarra_normal_split', normalSplitMode); } catch (e) {}
+  });
 
   function setBibleStatus(text, type) {
     bibleLoadStatus.textContent = text;
@@ -1274,6 +1312,7 @@
     btnModeBible.classList.toggle('active', workMode === 'bible');
     btnModeNormal.classList.toggle('active', workMode === 'normal');
     bibleControlsBar.classList.toggle('hidden', workMode !== 'bible');
+    normalControlsBar.classList.toggle('hidden', workMode !== 'normal');
 
     if (workMode === 'bible') {
       pasteInput.placeholder =
@@ -1475,18 +1514,18 @@
       if (vEnd > vStart) {
         // Primero verificar si existe clave exacta de rango (ej. en DHH/TLAI)
         const exactRange = bibleMap[`${bk} ${chapter}:${vStart}-${vEnd}`];
-        if (exactRange) return exactRange;
+        if (exactRange) return `${vStart} ${exactRange}`;
 
         const parts = [];
         let lastText = '';
         for (let v = vStart; v <= vEnd; v++) {
           const txt = bibleMap[`${bk} ${chapter}:${v}`];
           if (txt && txt !== lastText) {
-            parts.push(v === vStart ? txt : `${v} ${txt}`);
+            parts.push(`${v} ${txt}`);
             lastText = txt;
           }
         }
-        if (parts.length > 0) return parts.join(' ');
+        if (parts.length > 0) return parts.join('\n');
       } else {
         const single = bibleMap[`${bk} ${chapter}:${vStart}`];
         if (single) return single;
@@ -1505,6 +1544,155 @@
     return v;
   }
 
+  // División natural de textos normales respetando puntuación (. ? ! ; : ,)
+  function splitNormalTextNaturally(text, mode) {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!clean) return [];
+    if (mode === 'none') return [clean];
+
+    // Separar por oraciones primero (. ? ! …)
+    const sentences = clean.match(/[^.!?…]+(?:[.!?…]+["»”')]*|$)/g) || [clean];
+    const trimmedSents = sentences.map(s => s.trim()).filter(Boolean);
+
+    if (mode === 'sentence') {
+      return trimmedSents;
+    }
+
+    // Modo 'natural': agrupa oraciones hasta ~280 caracteres, y si una oración supera 340, divide en ; : o ,
+    const MAX_TARGET = 280;
+    const HARD_LIMIT = 340;
+    const chunks = [];
+    let buf = '';
+
+    function splitLongClause(clause) {
+      const out = [];
+      let rem = clause.trim();
+      while (rem.length > HARD_LIMIT) {
+        const slice = rem.slice(0, HARD_LIMIT);
+        let cut = -1;
+        // 1. Buscar ; o :
+        for (const sep of ['; ', ': ']) {
+          const idx = slice.lastIndexOf(sep);
+          if (idx > 110) { cut = Math.max(cut, idx + 1); }
+        }
+        // 2. Si no hay, buscar coma
+        if (cut === -1) {
+          const idx = slice.lastIndexOf(', ');
+          if (idx > 110) cut = idx + 1;
+        }
+        // 3. Último recurso: espacio
+        if (cut === -1) {
+          const idx = slice.lastIndexOf(' ');
+          cut = idx > 60 ? idx : HARD_LIMIT;
+        }
+        out.push(rem.slice(0, cut).trim());
+        rem = rem.slice(cut).trim();
+      }
+      if (rem) out.push(rem);
+      return out;
+    }
+
+    for (const s of trimmedSents) {
+      if (s.length > HARD_LIMIT) {
+        if (buf) { chunks.push(buf); buf = ''; }
+        splitLongClause(s).forEach(part => chunks.push(part));
+      } else if (!buf) {
+        buf = s;
+      } else if ((buf.length + 1 + s.length) <= MAX_TARGET) {
+        buf += ' ' + s;
+      } else {
+        chunks.push(buf);
+        buf = s;
+      }
+    }
+    if (buf) chunks.push(buf);
+    return chunks;
+  }
+
+  function makeVerseId() {
+    return 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function buildBiblicalBlocksFromRef(parsedRef) {
+    const ver = parsedRef.versionTag || activeBibleVersion;
+    const targetMap = (parsedRef.versionTag && bibleCache[parsedRef.versionTag]) || localBibleMap;
+    const total = parsedRef.vEnd - parsedRef.vStart + 1;
+
+    // Si el usuario pegó texto manual al lado de la cita, respetar su texto sin dividir por JSON
+    if (parsedRef.body) {
+      return [{
+        id: makeVerseId(),
+        ref: parsedRef.refDisplay,
+        version: ver,
+        isBiblical: true,
+        canonBookId: parsedRef.book.id,
+        chapter: parsedRef.chapter,
+        vStart: parsedRef.vStart,
+        vEnd: parsedRef.vEnd,
+        verseNum: String(parsedRef.vStart),
+        text: parsedRef.body,
+        wordMarks: {},
+        drawData: null
+      }];
+    }
+
+    // Determinar tamaño de bloque según selector
+    let chunkSize = total;
+    if (bibleChunkMode === '1') chunkSize = 1;
+    else if (bibleChunkMode === '2') chunkSize = 2;
+    else if (bibleChunkMode === '4') chunkSize = 4;
+    else if (bibleChunkMode === 'auto3') chunkSize = total >= 4 ? 3 : total;
+    else chunkSize = total; // 'all'
+
+    const blocks = [];
+    for (let s = parsedRef.vStart; s <= parsedRef.vEnd; s += chunkSize) {
+      const e = Math.min(parsedRef.vEnd, s + chunkSize - 1);
+      const rangeStr = e > s ? `${parsedRef.chapter}:${s}-${e}` : `${parsedRef.chapter}:${s}`;
+      const body = lookupBiblePassage(targetMap, parsedRef.book, parsedRef.chapter, s, e);
+      blocks.push({
+        id: makeVerseId(),
+        ref: `${parsedRef.book.display} ${rangeStr}`,
+        version: ver,
+        isBiblical: true,
+        canonBookId: parsedRef.book.id,
+        chapter: parsedRef.chapter,
+        vStart: s,
+        vEnd: e,
+        verseNum: e === s ? String(s) : '',
+        text: body,
+        wordMarks: {},
+        drawData: null
+      });
+    }
+    return blocks;
+  }
+
+  function pushFinalizedBlock(result, blk) {
+    if (!blk) return;
+    if (blk.isBiblical) {
+      result.push(blk);
+      return;
+    }
+    const parts = splitNormalTextNaturally(blk.text, normalSplitMode);
+    if (parts.length <= 1) {
+      result.push(blk);
+    } else {
+      const baseRef = blk.ref;
+      parts.forEach((p, idx) => {
+        result.push({
+          id: makeVerseId(),
+          ref: `${baseRef} (${idx + 1}/${parts.length})`,
+          version: '',
+          isBiblical: false,
+          verseNum: '',
+          text: p,
+          wordMarks: {},
+          drawData: null
+        });
+      });
+    }
+  }
+
   function parseVersesFromText(rawText) {
     const clean = rawText.replace(/\r\n/g, '\n').replace(/\*\*/g, '').trim();
     if (!clean) return [];
@@ -1519,7 +1707,7 @@
 
       if (!line) {
         if (current) {
-          result.push(current);
+          pushFinalizedBlock(result, current);
           current = null;
         }
         continue;
@@ -1527,7 +1715,7 @@
 
       const hMatch = line.match(/^#{1,6}\s+(.+)$/);
       if (hMatch) {
-        if (current) { result.push(current); current = null; }
+        if (current) { pushFinalizedBlock(result, current); current = null; }
         pendingHeading = hMatch[1].trim();
         continue;
       }
@@ -1536,35 +1724,22 @@
       if (workMode === 'bible') {
         const parsedRef = parseBibleRefHeader(line);
         if (parsedRef) {
-          if (current) result.push(current);
+          if (current) { pushFinalizedBlock(result, current); current = null; }
           pendingHeading = '';
-          const ver = parsedRef.versionTag || activeBibleVersion;
-          let body = parsedRef.body;
-          if (!body) {
-            const targetMap = (parsedRef.versionTag && bibleCache[parsedRef.versionTag]) || localBibleMap;
-            body = lookupBiblePassage(targetMap, parsedRef.book, parsedRef.chapter, parsedRef.vStart, parsedRef.vEnd);
+          const blocks = buildBiblicalBlocksFromRef(parsedRef);
+          if (blocks.length > 1) {
+            blocks.forEach(b => result.push(b));
+          } else if (blocks.length === 1) {
+            current = blocks[0];
           }
-          current = {
-            id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-            ref: parsedRef.refDisplay,
-            version: ver,
-            isBiblical: true,
-            canonBookId: parsedRef.book.id,
-            chapter: parsedRef.chapter,
-            vStart: parsedRef.vStart,
-            vEnd: parsedRef.vEnd,
-            verseNum: String(parsedRef.vStart),
-            text: body,
-            wordMarks: {},
-            drawData: null
-          };
           continue;
         }
       }
 
       // 2. Continuación de bloque abierto
       if (current) {
-        current.text = (current.text ? current.text + ' ' : '') + line;
+        const sep = current.isBiblical ? '\n' : ' ';
+        current.text = (current.text ? current.text + sep : '') + line;
         continue;
       }
 
@@ -1572,25 +1747,28 @@
       const tm = !pendingHeading ? line.match(TITLE_TEXT_REGEX) : null;
       if (tm) {
         current = {
-          id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          id: makeVerseId(),
           ref: tm[1].trim(), version: '', isBiblical: false, verseNum: '', text: tm[2].trim(), wordMarks: {}, drawData: null
         };
       } else {
         const title = pendingHeading || ('Texto ' + (result.length + 1));
         pendingHeading = '';
         current = {
-          id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          id: makeVerseId(),
           ref: title, version: '', isBiblical: false, verseNum: '', text: line, wordMarks: {}, drawData: null
         };
       }
     }
 
-    if (current) result.push(current);
+    if (current) pushFinalizedBlock(result, current);
 
     result.forEach(v => {
       if (v.isBiblical) {
-        if (!v.text) v.text = `(No se encontró el texto en ${v.version} — verifica la cita o carga una Biblia .json)`;
-        else v.text = v.text.replace(/^\d+\s+/, '');
+        if (!v.text) {
+          v.text = `(No se encontró el texto en ${v.version} — verifica la cita o carga una Biblia .json)`;
+        } else if (!v.text.includes('\n') && v.verseNum) {
+          v.text = v.text.replace(/^\d+\s+/, '');
+        }
       }
     });
     return result;
@@ -1807,7 +1985,9 @@
     btSub.textContent = `${formatVersionLabel(newVer)} · PIZARRA INTERACTIVA`;
     stageVer.textContent = newVer;
     stageVer.style.display = 'inline-block';
+    v.verseNum = (v.vEnd === v.vStart) ? String(v.vStart) : '';
     renderVerseTokens(v);
+    requestAnimationFrame(() => resizeCanvas(v.drawData));
     saveState();
     showToast(`✅ Mostrando ${v.ref} (${newVer})`);
   });
@@ -1920,29 +2100,44 @@
   }
 
   function renderVerseTokens(v) {
-    const words = v.text.split(/(\s+)/);
+    const lines = String(v.text || '').split('\n').filter(l => l.trim().length > 0);
     let wIdx = 0;
-    const numHtml = v.verseNum ? `<span class="verse-num">${escapeHtml(v.verseNum)}</span>` : '';
-    const tokensHtml = words.map(part => {
-      if (/^\s+$/.test(part)) return part;
-      const key = String(wIdx++);
-      const mark = (v.wordMarks && v.wordMarks[key]) || null;
-      let cls = 'w-tok';
-      let style = '';
-      if (mark) {
-        cls += ' wm-' + mark.style;
-        if (mark.style === 'highlight') {
-          style = `background:${hexToRgba(mark.color, 0.32)};color:${mark.color === '#ffffff' ? '#000' : 'inherit'};`;
-        } else if (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy') {
-          style = `text-decoration-color:${mark.color};color:${mark.color};`;
-        } else if (mark.style === 'box' || mark.style === 'circle') {
-          style = `border-color:${mark.color};color:${mark.color};`;
+
+    const linesHtml = lines.map((lineText, lineIdx) => {
+      let lineNumHtml = '';
+      let content = lineText;
+      if (v.isBiblical) {
+        const lm = content.match(/^(\d+)\s+(.*)$/);
+        if (lm) {
+          lineNumHtml = `<span class="verse-num">${escapeHtml(lm[1])}</span>`;
+          content = lm[2];
+        } else if (lineIdx === 0 && v.verseNum) {
+          lineNumHtml = `<span class="verse-num">${escapeHtml(v.verseNum)}</span>`;
         }
       }
-      return `<span class="${cls}" data-widx="${key}" style="${style}">${escapeHtml(part)}</span>`;
+      const words = content.split(/(\s+)/);
+      const tokensHtml = words.map(part => {
+        if (/^\s+$/.test(part)) return part;
+        const key = String(wIdx++);
+        const mark = (v.wordMarks && v.wordMarks[key]) || null;
+        let cls = 'w-tok';
+        let style = '';
+        if (mark) {
+          cls += ' wm-' + mark.style;
+          if (mark.style === 'highlight') {
+            style = `background:${hexToRgba(mark.color, 0.32)};color:${mark.color === '#ffffff' ? '#000' : 'inherit'};`;
+          } else if (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy') {
+            style = `text-decoration-color:${mark.color};color:${mark.color};`;
+          } else if (mark.style === 'box' || mark.style === 'circle') {
+            style = `border-color:${mark.color};color:${mark.color};`;
+          }
+        }
+        return `<span class="${cls}" data-widx="${key}" style="${style}">${escapeHtml(part)}</span>`;
+      }).join('');
+      return `<div class="verse-line">${lineNumHtml}${tokensHtml}</div>`;
     }).join('');
 
-    stageText.innerHTML = numHtml + tokensHtml;
+    stageText.innerHTML = linesHtml;
     stageText.style.fontSize = currentFontSize + 'px';
   }
 
@@ -1961,9 +2156,15 @@
   });
 
   function resizeCanvas(restoreDataUrl) {
-    const rect = boardStage.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    // Colapsar temporalmente el canvas para medir el scrollHeight real del texto
+    canvas.style.width = '0px';
+    canvas.style.height = '0px';
+    const w = Math.max(boardStage.clientWidth, boardStage.scrollWidth);
+    const h = Math.max(boardStage.clientHeight, boardStage.scrollHeight);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = w;
+    canvas.height = h;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (restoreDataUrl) {
       const img = new Image();
@@ -2168,11 +2369,13 @@
     currentFontSize = Math.max(20, currentFontSize - 4);
     stageText.style.fontSize = currentFontSize + 'px';
     document.getElementById('fontSizeLabel').textContent = currentFontSize + 'px';
+    if (activeIndex >= 0) requestAnimationFrame(() => resizeCanvas(verses[activeIndex].drawData));
   });
   document.getElementById('btnFontInc').addEventListener('click', () => {
     currentFontSize = Math.min(72, currentFontSize + 4);
     stageText.style.fontSize = currentFontSize + 'px';
     document.getElementById('fontSizeLabel').textContent = currentFontSize + 'px';
+    if (activeIndex >= 0) requestAnimationFrame(() => resizeCanvas(verses[activeIndex].drawData));
   });
 
   document.getElementById('btnThemeToggle').addEventListener('click', () => {
@@ -2216,17 +2419,23 @@
     octx.fillStyle = txtColors[themeIdx];
     octx.font = `${currentFontSize}px "Segoe UI", sans-serif`;
     const maxW = out.width - padX * 2;
-    const words = (v.verseNum ? v.verseNum + ' ' : '') + v.text;
-    let line = '';
-    for (const w of words.split(' ')) {
-      const test = line ? line + ' ' + w : w;
-      if (octx.measureText(test).width > maxW && line) {
+    const rawLines = String(v.text || '').split('\n');
+    rawLines.forEach((rawL, idx) => {
+      const prefixed = (idx === 0 && v.verseNum && !/^\d+\s/.test(rawL)) ? (v.verseNum + ' ' + rawL) : rawL;
+      let line = '';
+      for (const w of prefixed.split(' ')) {
+        const test = line ? line + ' ' + w : w;
+        if (octx.measureText(test).width > maxW && line) {
+          octx.fillText(line, padX, y);
+          line = w;
+          y += currentFontSize * 1.5;
+        } else line = test;
+      }
+      if (line) {
         octx.fillText(line, padX, y);
-        line = w;
-        y += currentFontSize * 1.5;
-      } else line = test;
-    }
-    if (line) octx.fillText(line, padX, y);
+        y += currentFontSize * 1.65;
+      }
+    });
     octx.drawImage(canvas, 0, 0);
 
     const a = document.createElement('a');
