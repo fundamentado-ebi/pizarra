@@ -956,6 +956,11 @@
               <option value="4">4 versículos por bloque</option>
               <option value="all">Pasaje completo (sin dividir)</option>
             </select>
+            <label for="bibleLayoutSelect" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">Formato:</label>
+            <select id="bibleLayoutSelect" class="bible-select" title="Mostrar versículos con salto de línea o seguidos en un mismo párrafo">
+              <option value="lines">Separados (salto de línea)</option>
+              <option value="inline">Seguidos (sin salto de línea)</option>
+            </select>
             <span class="bible-status" id="bibleLoadStatus">⏳ Cargando Biblia...</span>
           </div>
           <div class="bible-controls hidden" id="normalControlsBar">
@@ -1273,6 +1278,7 @@
   let activeBibleVersion = localStorage.getItem('pizarra_bible_ver') || 'NBLA';
   if (!BIBLES_CATALOG[activeBibleVersion]) activeBibleVersion = 'NBLA';
   let bibleChunkMode = localStorage.getItem('pizarra_bible_chunk') || 'auto3';
+  let bibleLayoutMode = localStorage.getItem('pizarra_bible_layout') || 'lines';
   let normalSplitMode = localStorage.getItem('pizarra_normal_split') || 'natural';
   const bibleCache = {};
 
@@ -1282,6 +1288,7 @@
   const normalControlsBar = document.getElementById('normalControlsBar');
   const bibleVersionSelect = document.getElementById('bibleVersionSelect');
   const bibleChunkSelect = document.getElementById('bibleChunkSelect');
+  const bibleLayoutSelect = document.getElementById('bibleLayoutSelect');
   const normalSplitSelect = document.getElementById('normalSplitSelect');
   const bibleLoadStatus = document.getElementById('bibleLoadStatus');
   const boardVersionSelect = document.getElementById('boardVersionSelect');
@@ -1290,11 +1297,16 @@
 
   bibleVersionSelect.value = activeBibleVersion;
   bibleChunkSelect.value = bibleChunkMode;
+  bibleLayoutSelect.value = bibleLayoutMode;
   normalSplitSelect.value = normalSplitMode;
 
   bibleChunkSelect.addEventListener('change', () => {
     bibleChunkMode = bibleChunkSelect.value;
     try { localStorage.setItem('pizarra_bible_chunk', bibleChunkMode); } catch (e) {}
+  });
+  bibleLayoutSelect.addEventListener('change', () => {
+    bibleLayoutMode = bibleLayoutSelect.value;
+    try { localStorage.setItem('pizarra_bible_layout', bibleLayoutMode); } catch (e) {}
   });
   normalSplitSelect.addEventListener('change', () => {
     normalSplitMode = normalSplitSelect.value;
@@ -1659,6 +1671,7 @@
         vStart: s,
         vEnd: e,
         verseNum: e === s ? String(s) : '',
+        layout: bibleLayoutMode,
         text: body,
         wordMarks: {},
         drawData: null
@@ -2134,10 +2147,13 @@
         }
         return `<span class="${cls}" data-widx="${key}" style="${style}">${escapeHtml(part)}</span>`;
       }).join('');
+      if (v.isBiblical && v.layout === 'inline') {
+        return `<span class="verse-inline">${lineIdx > 0 ? ' ' : ''}${lineNumHtml}${tokensHtml}</span>`;
+      }
       return `<div class="verse-line">${lineNumHtml}${tokensHtml}</div>`;
     }).join('');
 
-    stageText.innerHTML = linesHtml;
+    stageText.innerHTML = (v.isBiblical && v.layout === 'inline') ? `<div class="verse-line">${linesHtml}</div>` : linesHtml;
     stageText.style.fontSize = currentFontSize + 'px';
   }
 
@@ -2419,7 +2435,9 @@
     octx.fillStyle = txtColors[themeIdx];
     octx.font = `${currentFontSize}px "Segoe UI", sans-serif`;
     const maxW = out.width - padX * 2;
-    const rawLines = String(v.text || '').split('\n');
+    const rawLines = (v.isBiblical && v.layout === 'inline')
+      ? [String(v.text || '').replace(/\n+/g, ' ')]
+      : String(v.text || '').split('\n');
     rawLines.forEach((rawL, idx) => {
       const prefixed = (idx === 0 && v.verseNum && !/^\d+\s/.test(rawL)) ? (v.verseNum + ' ' + rawL) : rawL;
       let line = '';
