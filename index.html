@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pizarra Interactiva de Textos y Versículos — 100% Offline</title>
+<style>
+  :root {
+    --bg-app: #090d16;
+    --bg-sidebar: #0d1321;
+    --bg-panel: #111726;
+    --bg-card: #151c2f;
+    --border: #232d45;
+    --gold: #f5b922;
+    --gold-soft: rgba(245, 185, 34, 0.14);
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --danger: #ef4444;
+    --danger-bg: rgba(239, 68, 68, 0.16);
+    --sidebar-w: 235px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-app);
+    color: var(--text-main);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ===== LAYOUT CON MENÚ LATERAL COMPACTO ===== */
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+    transition: width 0.2s ease, padding 0.2s ease;
+  }
+  .sidebar.collapsed {
+    width: 68px;
+    padding: 20px 10px;
+  }
+  .sidebar.collapsed .sb-text,
+  .sidebar.collapsed .sb-brand-text,
+  .sidebar.collapsed .sb-footer-note {
+    display: none;
+  }
+  .sidebar.collapsed .sb-nav-btn {
+    justify-content: center;
+    padding: 11px;
+  }
+  .sidebar.collapsed .sb-brand {
+    justify-content: center;
+  }
+
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sb-brand-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .brand-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--gold-soft);
+    border: 1px solid rgba(245, 185, 34, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .sb-brand-text h1 {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .sb-brand-text span {
+    font-size: 0.68rem;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .sb-collapse-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .sb-collapse-btn:hover { color: #fff; border-color: var(--gold); }
+
+  .sb-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sb-nav-btn {
+    width: 100%;
+    background: transparent;
+    color: #cbd5e1;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    padding: 11px 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.16s ease;
+    text-align: left;
+  }
+  .sb-nav-btn:hover {
+    background: #161f35;
+    color: #fff;
+  }
+  .sb-nav-btn.active {
+    background: var(--gold-soft);
+    border-color: rgba(245, 185, 34, 0.42);
+    color: var(--gold);
+  }
+  .sb-nav-icon { font-size: 1.05rem; flex-shrink: 0; }
+  .sb-badge {
+    margin-left: auto;
+    background: #1f2942;
+    color: #e2e8f0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 999px;
+  }
+  .sb-nav-btn.active .sb-badge {
+    background: rgba(245, 185, 34, 0.22);
+    color: var(--gold);
+  }
+
+  .sb-footer-note {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  /* Área principal */
+  .main-content {
+    flex: 1;
+    min-width: 0;
+    padding: 26px 28px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .view-panel { display: none; }
+  .view-panel.active { display: block; }
+
+  @media (max-width: 780px) {
+    .app-layout { flex-direction: column; }
+    .sidebar {
+      width: 100% !important;
+      height: auto;
+      position: relative;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      gap: 10px;
+    }
+    .sb-nav { flex-direction: row; }
+    .sb-collapse-btn, .sb-footer-note { display: none; }
+    .main-content { padding: 18px 14px 40px; }
+  }
+
+  .btn {
+    background: #1b243b;
+    color: #e2e8f0;
+    border: 1px solid #2b3857;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.16s ease;
+  }
+  .btn:hover { background: #253252; border-color: #3d5180; color: #fff; }
+  .btn-gold { background: var(--gold-soft); border-color: rgba(245,185,34,0.45); color: var(--gold); }
+  .btn-gold:hover { background: rgba(245,185,34,0.24); color: #ffd15c; }
+  .btn-danger { background: var(--danger-bg); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+  .btn-danger:hover { background: rgba(239,68,68,0.28); color: #fff; }
+
+  /* Cabecera de vista */
+  .view-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .view-header h2 {
+    font-size: 1.25rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .count-pill {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border: 1px solid rgba(245,185,34,0.35);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .search-input {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #fff;
+    padding: 9px 14px;
+    font-size: 0.88rem;
+    min-width: 260px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--gold); }
+
+  /* Vista Configuración y Carga */
+  .config-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .config-card h3 {
+    font-size: 0.96rem;
+    color: var(--gold);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 16px;
+  }
+  @media (max-width: 860px) { .upload-grid { grid-template-columns: 1fr; } }
+
+  .drop-zone {
+    background: #0c1220;
+    border: 2px dashed #2e3d63;
+    border-radius: 14px;
+    padding: 26px 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--gold);
+    background: rgba(245, 185, 34, 0.06);
+  }
+  .drop-zone .dz-icon { font-size: 2rem; }
+  .drop-zone strong { color: #fff; font-size: 0.95rem; }
+  .drop-zone span { color: var(--text-muted); font-size: 0.8rem; }
+
+  .paste-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .paste-box textarea {
+    width: 100%;
+    min-height: 120px;
+    background: #0a0f1c;
+    border: 1px solid #232f4d;
+    border-radius: 10px;
+    color: #f1f5f9;
+    padding: 11px 13px;
+    font-family: inherit;
+    font-size: 0.86rem;
+    resize: vertical;
+    outline: none;
+  }
+  .paste-box textarea:focus { border-color: var(--gold); }
+  .paste-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .config-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Listado de versículos */
+  .verse-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 14px;
+  }
+  .verse-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+  }
+  .verse-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  }
+  .vc-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .vc-ref { color: var(--gold); font-weight: 700; font-size: 1rem; }
+  .vc-badges { display: flex; gap: 6px; align-items: center; }
+  .vc-ver {
+    background: #1f2942;
+    color: #cbd5e1;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+  }
+  .vc-marked {
+    background: rgba(34, 197, 94, 0.18);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+  }
+  .vc-preview {
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .vc-footer {
+    margin-top: auto;
+    padding-top: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+  }
+  .vc-del {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+  .vc-del:hover { color: #f87171; background: rgba(239,68,68,0.12); }
+
+  .status-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #172036;
+    color: #fff;
+    border: 1px solid var(--gold);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    z-index: 3000;
+    display: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+  }
+
+  /* ===== MODAL PIZARRA INTERACTIVA (ESTILO LOOK AT THE BOOK) ===== */
+  .board-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: #000000;
+    color: #ffffff;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+  .board-overlay.open { display: flex; }
+
+  .board-overlay.theme-black { background: #000000; color: #ffffff; }
+  .board-overlay.theme-slate { background: #111827; color: #f8fafc; }
+  .board-overlay.theme-light { background: #faf8f2; color: #1e293b; }
+
+  .board-overlay.theme-light .board-topbar,
+  .board-overlay.theme-light .board-bottombar,
+  .board-overlay.theme-light .word-style-bar {
+    background: rgba(255, 255, 255, 0.94);
+    border-color: #cbd5e1;
+    color: #1e293b;
+  }
+  .board-overlay.theme-light .bt-title { color: #0f172a; }
+  .board-overlay.theme-light .bt-btn,
+  .board-overlay.theme-light .tool-btn,
+  .board-overlay.theme-light .size-btn {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #1e293b;
+  }
+  .board-overlay.theme-light .bt-btn:hover,
+  .board-overlay.theme-light .tool-btn:hover { background: #e2e8f0; }
+  .board-overlay.theme-light .tool-btn.active,
+  .board-overlay.theme-light .size-btn.active {
+    background: #1e3a8a;
+    color: #fff;
+    border-color: #1e3a8a;
+  }
+  .board-overlay.theme-light .stage-ref { color: #b45309; }
+  .board-overlay.theme-light .stage-ver-pill { background: #e2e8f0; color: #334155; }
+  .board-overlay.theme-light .verse-num { color: #b45309; }
+
+  /* Cabecera flotante superior */
+  .board-topbar {
+    position: fixed;
+    top: 12px;
+    left: 16px;
+    right: 16px;
+    z-index: 35;
+    background: rgba(15, 20, 34, 0.94);
+    border: 1px solid #242e47;
+    border-radius: 14px;
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  /* Ocultado suave (automático o manual) */
+  .board-overlay.top-hidden .board-topbar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-18px);
+  }
+  .board-overlay.bottom-hidden .board-bottombar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 18px);
+  }
+  .board-overlay.bottom-hidden .word-style-bar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 18px);
+  }
+
+  .bt-left { display: flex; align-items: center; gap: 12px; }
+  .bt-book-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: rgba(245, 185, 34, 0.14);
+    border: 1px solid rgba(245, 185, 34, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    font-size: 1rem;
+  }
+  .bt-title { font-size: 1.02rem; font-weight: 700; color: #fff; line-height: 1.2; }
+  .bt-sub { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); text-transform: uppercase; }
+
+  .bt-right { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+  .bt-btn {
+    background: #172036;
+    color: #e2e8f0;
+    border: 1px solid #293554;
+    border-radius: 9px;
+    padding: 6px 11px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+  }
+  .bt-btn:hover { background: #233050; border-color: #3e5282; color: #fff; }
+  .bt-btn.active-mode {
+    background: var(--gold-soft);
+    border-color: rgba(245, 185, 34, 0.5);
+    color: var(--gold);
+  }
+  .bt-btn-close {
+    background: rgba(153, 27, 27, 0.45);
+    border-color: rgba(239, 68, 68, 0.55);
+    color: #fecaca;
+  }
+  .bt-btn-close:hover { background: rgba(220, 38, 38, 0.75); color: #fff; }
+
+  .font-ctrl {
+    display: inline-flex;
+    align-items: center;
+    background: #172036;
+    border: 1px solid #293554;
+    border-radius: 9px;
+    overflow: hidden;
+  }
+  .font-ctrl button {
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    padding: 6px 9px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .font-ctrl button:hover { background: #233050; }
+  .font-ctrl span {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    padding: 0 6px;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  /* Lienzo central 100% libre de distracciones */
+  .board-stage {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 44px;
+    overflow: auto;
+  }
+
+  .verse-container {
+    position: relative;
+    z-index: 10;
+    max-width: 960px;
+    width: 100%;
+    padding: 20px 10px;
+  }
+  .stage-ref-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .stage-ref { color: var(--gold); font-size: 1.35rem; font-weight: 700; }
+  .stage-ver-pill {
+    background: #1f2636;
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .stage-text {
+    font-size: 38px;
+    line-height: 1.65;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    word-wrap: break-word;
+  }
+  .verse-num {
+    color: var(--gold);
+    font-size: 0.56em;
+    font-weight: 700;
+    vertical-align: super;
+    margin-right: 6px;
+  }
+
+  /* Palabras marcables (Capa 1) */
+  .w-tok {
+    display: inline-block;
+    padding: 0 3px;
+    margin: 0 1px;
+    border-radius: 6px;
+    transition: background 0.12s ease;
+  }
+  .board-overlay.word-mode .w-tok { cursor: pointer; }
+  .board-overlay.word-mode .w-tok:hover { outline: 1px dashed rgba(245, 185, 34, 0.7); }
+  .board-overlay.word-mode #drawCanvas { pointer-events: none; }
+  .board-overlay:not(.word-mode) #drawCanvas { pointer-events: auto; cursor: crosshair; }
+
+  .wm-highlight { padding: 1px 6px; border-radius: 6px; }
+  .wm-underline { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 3px; }
+  .wm-dotted { text-decoration: underline dotted; text-underline-offset: 6px; text-decoration-thickness: 3px; }
+  .wm-wavy { text-decoration: underline wavy; text-underline-offset: 6px; text-decoration-thickness: 2.5px; }
+  .wm-box { border: 2.5px solid currentColor; padding: 0 6px; border-radius: 6px; }
+  .wm-circle { border: 2.5px solid currentColor; padding: 0 10px; border-radius: 999px; }
+
+  #drawCanvas {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  /* Sub-barra de estilos de palabra */
+  .word-style-bar {
+    position: fixed;
+    bottom: 94px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    z-index: 35;
+    background: rgba(15, 20, 34, 0.95);
+    border: 1px solid #293554;
+    border-radius: 10px;
+    padding: 5px 12px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .board-overlay.word-mode .word-style-bar { display: flex; }
+
+  /* Barra inferior estrictamente en 2 líneas equilibradas */
+  .board-bottombar {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    z-index: 35;
+    background: rgba(15, 20, 34, 0.96);
+    border: 1px solid #242e47;
+    border-radius: 14px;
+    padding: 7px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .bb-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .bb-row::-webkit-scrollbar { display: none; }
+  .bb-row-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(41, 53, 84, 0.7);
+  }
+
+  .tool-sep { width: 1px; height: 20px; background: #293554; margin: 0 2px; flex-shrink: 0; }
+  .tool-btn, .size-btn {
+    background: transparent;
+    color: #cbd5e1;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 5px 7px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.14s ease;
+    white-space: nowrap;
+  }
+  .tool-btn:hover, .size-btn:hover { background: #1e2942; color: #fff; }
+  .tool-btn.active, .size-btn.active {
+    background: #253356;
+    border-color: #60a5fa;
+    color: #fff;
+  }
+
+  .color-dot {
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.14s ease, border-color 0.14s ease;
+    flex-shrink: 0;
+  }
+  .color-dot:hover { transform: scale(1.15); }
+  .color-dot.active {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px #0f1422, 0 0 0 4px #f5b922;
+    transform: scale(1.12);
+  }
+
+  /* Indicador ultra discreto cuando está oculto manualmente */
+  .restore-bars-btn {
+    position: fixed;
+    top: 12px;
+    right: 14px;
+    z-index: 40;
+    display: none;
+    background: rgba(15, 20, 34, 0.72);
+    color: var(--gold);
+    border: 1px solid rgba(245, 185, 34, 0.35);
+    border-radius: 9px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    opacity: 0.35;
+    transition: opacity 0.2s ease;
+  }
+  .restore-bars-btn:hover { opacity: 1; }
+  .board-overlay.manual-hidden .restore-bars-btn { display: inline-flex; }
+</style>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- MENÚ LATERAL COMPACTO -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="sb-brand">
+      <div class="sb-brand-left">
+        <div class="brand-icon">📖</div>
+        <div class="sb-brand-text">
+          <h1>Pizarra Interactiva</h1>
+          <span>100% Offline</span>
+        </div>
+      </div>
+      <button class="sb-collapse-btn" id="btnCollapseSidebar" title="Contraer menú">◀</button>
+    </div>
+
+    <nav class="sb-nav">
+      <button class="sb-nav-btn active" data-view="view-verses">
+        <span class="sb-nav-icon">📑</span>
+        <span class="sb-text">Textos</span>
+        <span class="sb-badge sb-text" id="sbVerseCount">0</span>
+      </button>
+      <button class="sb-nav-btn" data-view="view-config">
+        <span class="sb-nav-icon">⚙️</span>
+        <span class="sb-text">Cargar y Configurar</span>
+      </button>
+    </nav>
+
+
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-content">
+    <!-- VISTA 1: LISTADO DE VERSÍCULOS (LIMPIO, SIN CAJAS DE CARGA) -->
+    <section class="view-panel active" id="view-verses">
+      <div class="view-header">
+        <h2>📑 Textos Cargados <span class="count-pill" id="verseCount">0</span></h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <input type="text" class="search-input" id="searchInput" placeholder="🔎 Filtrar por título, cita o palabra..." />
+          <button class="btn btn-gold" id="btnQuickGoUpload">➕ Cargar más</button>
+        </div>
+      </div>
+      <div class="verse-list" id="verseList"></div>
+    </section>
+
+    <!-- VISTA 2: CARGAR Y CONFIGURAR -->
+    <section class="view-panel" id="view-config">
+      <div class="view-header">
+        <h2>⚙️ Cargar Textos y Configuración</h2>
+        <button class="btn" id="btnBackToVerses">← Ver Textos</button>
+      </div>
+
+      <div class="config-card">
+        <h3>📄 Subir Archivo (.PDF, .MD, .TXT) o Pegar Textos</h3>
+        <div class="upload-grid">
+          <div class="drop-zone" id="dropZone">
+            <div class="dz-icon">📄</div>
+            <strong>Arrastra aquí tu archivo .PDF, .MD o .TXT</strong>
+            <span>O haz clic para seleccionarlo desde tu computador (100% sin internet)</span>
+            <input type="file" id="fileInput" accept=".pdf,.md,.txt,.text" style="display:none" />
+          </div>
+
+          <div class="paste-box">
+            <textarea id="pasteInput" placeholder="Pega aquí versículos bíblicos o cualquier texto (separa párrafos con línea en blanco o usa Título — texto):&#10;Salmos 94:22 — Pero el SEÑOR ha sido mi baluarte, y mi Dios la roca de mi refugio.&#10;Idea Principal — Puedes cargar artículos, apuntes, citas o párrafos de cualquier tema."></textarea>
+            <div class="paste-actions">
+              <span style="font-size:0.78rem;color:var(--text-muted);">Detecta automáticamente si es texto bíblico o texto general</span>
+              <div style="display:flex;gap:8px;">
+                <button class="btn" id="btnAppendPaste">➕ Agregar</button>
+                <button class="btn btn-gold" id="btnReplacePaste">📥 Cargar lista</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <h3>🛠️ Gestión de Sesión y Biblia Local</h3>
+        <div class="config-actions-row">
+          <button class="btn btn-gold" id="btnLoadSample">✨ Cargar Ejemplo</button>
+          <button class="btn" id="btnLoadBibleJson" title="Opcional: cargar archivo local de Biblia (.json) para resolver listas de solo referencias sin internet">📚 Biblia Local (.json)</button>
+          <button class="btn" id="btnExportSession">💾 Guardar Sesión (.json)</button>
+          <button class="btn" id="btnImportSession">📂 Abrir Sesión (.json)</button>
+          <button class="btn btn-danger" id="btnClearList">🗑️ Limpiar Listado</button>
+          <input type="file" id="bibleJsonInput" accept=".json" style="display:none" />
+          <input type="file" id="sessionJsonInput" accept=".json" style="display:none" />
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== VENTANA COMPLETA: PIZARRA INTERACTIVA (LOOK AT THE BOOK) ===== -->
+<div class="board-overlay theme-black" id="boardOverlay" role="dialog" aria-modal="true">
+  <button class="restore-bars-btn" id="btnRestoreBars" title="Mostrar controles (Tecla H)">👁 Mostrar (H)</button>
+
+  <div class="board-topbar" id="boardTopBar">
+    <div class="bt-left">
+      <div class="bt-book-icon">📖</div>
+      <div>
+        <div class="bt-title" id="btRef">Salmos 94:22</div>
+        <div class="bt-sub" id="btSub">PIZARRA INTERACTIVA</div>
+      </div>
+    </div>
+
+    <div class="bt-right">
+      <button class="bt-btn" id="btnPrevVerse" title="Texto anterior">←</button>
+      <button class="bt-btn" id="btnNextVerse" title="Siguiente texto">→</button>
+
+      <div class="font-ctrl">
+        <button id="btnFontDec" title="Reducir texto">A-</button>
+        <span id="fontSizeLabel">38px</span>
+        <button id="btnFontInc" title="Aumentar texto">A+</button>
+      </div>
+
+      <button class="bt-btn" id="btnThemeToggle" title="Alternar fondo: Pizarra Negra / Oscuro / Claro">🌑 Pizarra</button>
+      <button class="bt-btn active-mode" id="btnAutoHideToggle" title="Modo Look at the Book: oculta barras automáticamente al subrayar">🎯 Auto-ocultar: SÍ</button>
+      <button class="bt-btn" id="btnCopyVerse">📋 Copiar</button>
+      <button class="bt-btn" id="btnSavePng">⬇ PNG</button>
+      <button class="bt-btn" id="btnFullscreen" title="Pantalla completa">⛶</button>
+      <button class="bt-btn" id="btnHideBars" title="Ocultar manualmente (Tecla H)">👁 Ocultar</button>
+      <button class="bt-btn bt-btn-close" id="btnCloseBoard">✕ Cerrar (ESC)</button>
+    </div>
+  </div>
+
+  <div class="board-stage" id="boardStage">
+    <div class="verse-container" id="verseContainer">
+      <div class="stage-ref-row">
+        <span class="stage-ref" id="stageRef">Salmos 94:22</span>
+        <span class="stage-ver-pill" id="stageVer">LBLA</span>
+      </div>
+      <div class="stage-text" id="stageText"></div>
+    </div>
+    <canvas id="drawCanvas"></canvas>
+  </div>
+
+  <!-- Sub-barra de estilos para Capa 1 (Marcado sobre palabras) -->
+  <div class="word-style-bar" id="wordStyleBar">
+    <span style="font-size:0.75rem;color:#94a3b8;font-weight:700;margin-right:4px;">Estilo palabra:</span>
+    <button class="tool-btn active" data-wstyle="highlight">Resaltado</button>
+    <button class="tool-btn" data-wstyle="underline">Subrayado</button>
+    <button class="tool-btn" data-wstyle="dotted">Punteado</button>
+    <button class="tool-btn" data-wstyle="wavy">Ondulado</button>
+    <button class="tool-btn" data-wstyle="box">Cuadrado</button>
+    <button class="tool-btn" data-wstyle="circle">Círculo</button>
+    <button class="tool-btn" data-wstyle="clear">Quitar marca</button>
+  </div>
+
+  <!-- Barra inferior flotante (2 líneas equilibradas) -->
+  <div class="board-bottombar" id="boardBottomBar">
+    <!-- Fila 1: Herramientas de marcado y figuras -->
+    <div class="bb-row">
+      <button class="tool-btn" data-tool="word" title="Capa 1: Marcar palabras con 9 colores y estilos">🔤 Palabra</button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn active" data-tool="pen" title="Lápiz libre">✏️ Lápiz</button>
+      <button class="tool-btn" data-tool="highlighter" title="Resaltador libre">🖍️ Resaltar</button>
+      <button class="tool-btn" data-tool="line" title="Línea recta">— Línea</button>
+      <button class="tool-btn" data-tool="dashed" title="Línea punteada">┄ Punteada</button>
+      <button class="tool-btn" data-tool="arrow" title="Flecha">➜ Flecha</button>
+      <button class="tool-btn" data-tool="rect" title="Cuadrado / Rectángulo">□ Cuadrado</button>
+      <button class="tool-btn" data-tool="circle" title="Círculo / Óvalo">○ Círculo</button>
+      <button class="tool-btn" data-tool="triangle" title="Triángulo">△ Triángulo</button>
+      <button class="tool-btn" data-tool="eraser" title="Borrador">🧹 Borrar</button>
+    </div>
+
+    <div class="bb-row-divider"></div>
+
+    <!-- Fila 2: Paleta de 9 colores + grosores + deshacer/limpiar -->
+    <div class="bb-row">
+      <div id="colorPalette" style="display:flex;align-items:center;gap:6px;"></div>
+      <div class="tool-sep"></div>
+      <button class="size-btn" data-width="2">• Fino</button>
+      <button class="size-btn active" data-width="5">• Medio</button>
+      <button class="size-btn" data-width="11">• Grueso</button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn" id="btnUndo" title="Deshacer (Ctrl+Z)">↶ Deshacer</button>
+      <button class="tool-btn" id="btnRedo" title="Rehacer (Ctrl+Y)">↷ Rehacer</button>
+      <button class="tool-btn" id="btnClearMarks" style="color:#fca5a5;" title="Limpiar marcas y dibujos">🗑️ Limpiar</button>
+    </div>
+  </div>
+</div>
+
+<div class="status-toast" id="statusToast"></div>
+
+<script src="js/pdf-offline-reader.js"></script>
+<script>
+(function () {
+  // ===== PALETA DE 9 COLORES GRAMATICALES + BLANCO =====
+  const COLORS = [
+    { hex: '#ffffff', name: 'Blanco (Pizarra)' },
+    { hex: '#ef4444', name: 'Rojo — Sustantivos' },
+    { hex: '#22c55e', name: 'Verde — Verbos' },
+    { hex: '#a855f7', name: 'Morado — Pronombres' },
+    { hex: '#f97316', name: 'Naranja — Determinantes / Artículos' },
+    { hex: '#3b82f6', name: 'Azul — Genitivos' },
+    { hex: '#f5b922', name: 'Amarillo — Preposiciones' },
+    { hex: '#ec4899', name: 'Rosado — Adjetivos' },
+    { hex: '#94a3b8', name: 'Gris — Adverbios / Conjunciones' },
+    { hex: '#c084fc', name: 'Lila — Secundarios' }
+  ];
+
+  const SAMPLE_VERSES = [
+    {
+      id: 'v-sal-94-22',
+      ref: 'Salmos 94:22',
+      version: 'LBLA',
+      isBiblical: true,
+      verseNum: '22',
+      text: 'Pero el SEÑOR ha sido mi baluarte, y mi Dios la roca de mi refugio.',
+      wordMarks: {},
+      drawData: null
+    },
+    {
+      id: 'v-col-1-15',
+      ref: 'Colosenses 1:15-16',
+      version: 'LBLA',
+      isBiblical: true,
+      verseNum: '15',
+      text: 'Él es la imagen del Dios invisible, el primogénito de toda creación. Porque en Él fueron creadas todas las cosas, tanto en los cielos como en la tierra, visibles e invisibles.',
+      wordMarks: {},
+      drawData: null
+    },
+    {
+      id: 'v-rom-8-1',
+      ref: 'Romanos 8:1',
+      version: 'LBLA',
+      isBiblical: true,
+      verseNum: '1',
+      text: 'Por consiguiente, no hay ahora condenación para los que están en Cristo Jesús, los que no andan conforme a la carne sino conforme al Espíritu.',
+      wordMarks: {},
+      drawData: null
+    },
+    {
+      id: 'v-fil-3-8',
+      ref: 'Filipenses 3:8',
+      version: 'LBLA',
+      isBiblical: true,
+      verseNum: '8',
+      text: 'Y aún más, yo estimo como pérdida todas las cosas en vista del incomparable valor de conocer a Cristo Jesús, mi Señor.',
+      wordMarks: {},
+      drawData: null
+    }
+  ];
+
+  let verses = [];
+  let localBibleMap = null;
+  let activeIndex = -1;
+  let currentTool = 'pen';
+  let currentWordStyle = 'highlight';
+  let currentColor = '#f5b922';
+  let currentWidth = 5;
+  let currentFontSize = 38;
+  const THEMES = [
+    { cls: 'theme-black', label: '🌑 Pizarra' },
+    { cls: 'theme-slate', label: '🌌 Oscuro' },
+    { cls: 'theme-light', label: '📄 Claro' }
+  ];
+  let themeIdx = 0;
+
+  // Control Look at the Book (Auto-ocultar y Manual)
+  let autoHideEnabled = true;
+  let manualHidden = false;
+  let hideTimer = null;
+
+  let undoStack = [];
+  let redoStack = [];
+  let isDrawing = false;
+  let startX = 0, startY = 0;
+  let snapshotImageData = null;
+
+  // DOM
+  const appSidebar = document.getElementById('appSidebar');
+  const btnCollapseSidebar = document.getElementById('btnCollapseSidebar');
+  const verseListEl = document.getElementById('verseList');
+  const verseCountEl = document.getElementById('verseCount');
+  const sbVerseCountEl = document.getElementById('sbVerseCount');
+  const searchInput = document.getElementById('searchInput');
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const pasteInput = document.getElementById('pasteInput');
+  const boardOverlay = document.getElementById('boardOverlay');
+  const boardStage = document.getElementById('boardStage');
+  const stageRef = document.getElementById('stageRef');
+  const stageVer = document.getElementById('stageVer');
+  const stageText = document.getElementById('stageText');
+  const btRef = document.getElementById('btRef');
+  const btSub = document.getElementById('btSub');
+  const btnAutoHideToggle = document.getElementById('btnAutoHideToggle');
+  const canvas = document.getElementById('drawCanvas');
+  const ctx = canvas.getContext('2d');
+  const toastEl = document.getElementById('statusToast');
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.style.display = 'block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { toastEl.style.display = 'none'; }, 2600);
+  }
+
+  // ===== NAVEGACIÓN MENÚ LATERAL =====
+  function switchView(viewId) {
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.toggle('active', p.id === viewId));
+    document.querySelectorAll('.sb-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === viewId));
+  }
+
+  document.querySelectorAll('.sb-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+  document.getElementById('btnQuickGoUpload').addEventListener('click', () => switchView('view-config'));
+  document.getElementById('btnBackToVerses').addEventListener('click', () => switchView('view-verses'));
+
+  btnCollapseSidebar.addEventListener('click', () => {
+    const collapsed = appSidebar.classList.toggle('collapsed');
+    btnCollapseSidebar.textContent = collapsed ? '▶' : '◀';
+  });
+
+  function saveState() {
+    try { localStorage.setItem('pizarra_biblica_offline_v1', JSON.stringify(verses)); } catch (e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('pizarra_biblica_offline_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          verses = parsed;
+          return;
+        }
+      }
+    } catch (e) {}
+    verses = JSON.parse(JSON.stringify(SAMPLE_VERSES));
+  }
+
+  // ===== DETECTOR Y PARSER INTELIGENTE (BÍBLICO Y TEXTO GENERAL) =====
+  const BIBLE_BOOKS = [
+    'génesis','genesis','gn','éxodo','exodo','ex','levítico','levitico','lv','números','numeros','nm',
+    'deuteronomio','dt','josué','josue','jos','jueces','jue','rut','1 samuel','2 samuel','1sa','2sa',
+    '1 reyes','2 reyes','1re','2re','1 crónicas','2 crónicas','1 cronicas','2 cronicas','1cr','2cr',
+    'esdras','esd','nehemías','nehemias','neh','ester','est','job','salmos','salmo','sal','proverbios','pr','prov',
+    'eclesiastés','eclesiastes','ec','cantares','cantar de los cantares','cant','isaías','isaias','is',
+    'jeremías','jeremias','jr','jer','lamentaciones','lm','ezequiel','ez','daniel','dn','oseas','os',
+    'joel','jl','amós','amos','am','abdías','abdias','abd','jonás','jonas','jon','miqueas','mi',
+    'nahúm','nahum','nah','habacuc','hab','sofonías','sofonias','sof','hageo','ag','zacarías','zacarias','zac',
+    'malaquías','malaquias','mal','mateo','mt','marcos','mc','mr','lucas','lc','juan','jn','hechos','hch',
+    'romanos','ro','rom','1 corintios','2 corintios','1co','2co','gálatas','galatas','ga','gál','efesios','ef',
+    'filipenses','fil','colosenses','col','1 tesalonicenses','2 tesalonicenses','1ts','2ts',
+    '1 timoteo','2 timoteo','1ti','2ti','tito','tit','filemón','filemon','flm','hebreos','heb',
+    'santiago','stg','1 pedro','2 pedro','1p','2p','1 juan','2 juan','3 juan','1jn','2jn','3jn',
+    'judas','jud','apocalipsis','ap'
+  ];
+
+  const REF_REGEX = /^((?:[1-3]\s+)?[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+de\s+los\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+|\s+de\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)?)\s+(\d+:\d+(?:[-–]\d+)?)\s*(?:\(([A-Z0-9]{2,8})\))?\s*(?:[—–:\-]\s*)?(.*)$/;
+  const TITLE_TEXT_REGEX = /^([^\n—–:]{2,70})\s*(?:[—–]|:(?=\s))\s+(.+)$/;
+
+  function isKnownBibleBook(name) {
+    const norm = name.toLowerCase().replace(/\./g, '').trim();
+    return BIBLE_BOOKS.includes(norm);
+  }
+
+  function formatVersionLabel(ver) {
+    if (!ver) return '';
+    const v = ver.toUpperCase();
+    if (v === 'LBLA') return 'LA BIBLIA DE LAS AMÉRICAS (LBLA)';
+    if (v === 'RV60' || v === 'RVR60') return 'REINA-VALERA 1960 (RV60)';
+    if (v === 'NBLA') return 'NUEVA BIBLIA DE LAS AMÉRICAS (NBLA)';
+    if (v === 'NVI') return 'NUEVA VERSIÓN INTERNACIONAL (NVI)';
+    return v;
+  }
+
+  function parseVersesFromText(rawText) {
+    const clean = rawText.replace(/\r\n/g, '\n').replace(/\*\*/g, '').trim();
+    if (!clean) return [];
+
+    const rawLines = clean.split('\n');
+    const result = [];
+    let current = null;
+    let pendingHeading = '';
+
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i].trim();
+
+      // Línea vacía: cierra el bloque actual (separa párrafos de textos generales)
+      if (!line) {
+        if (current) {
+          result.push(current);
+          current = null;
+        }
+        continue;
+      }
+
+      // Encabezado Markdown (# Título)
+      const hMatch = line.match(/^#{1,6}\s+(.+)$/);
+      if (hMatch) {
+        if (current) { result.push(current); current = null; }
+        pendingHeading = hMatch[1].trim();
+        continue;
+      }
+
+      // 1. Verificar si es una cita bíblica real
+      const bm = line.match(REF_REGEX);
+      if (bm && isKnownBibleBook(bm[1])) {
+        if (current) result.push(current);
+        pendingHeading = '';
+        const ref = (bm[1].trim() + ' ' + bm[2].trim()).trim();
+        const ver = (bm[3] || 'LBLA').trim();
+        let body = (bm[4] || '').trim();
+        const numMatch = bm[2].match(/:(\d+)/);
+        const vNum = numMatch ? numMatch[1] : '';
+        if (!body && localBibleMap) {
+          const found = localBibleMap[ref.toLowerCase()];
+          if (found) body = found;
+        }
+        current = {
+          id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          ref, version: ver, isBiblical: true, verseNum: vNum, text: body, wordMarks: {}, drawData: null
+        };
+        continue;
+      }
+
+      // 2. Si ya hay un bloque abierto, continuar agregando texto al mismo bloque
+      if (current) {
+        current.text = (current.text ? current.text + ' ' : '') + line;
+        continue;
+      }
+
+      // 3. Texto NO bíblico: verificar si viene con "Título — texto" o "Título: texto"
+      const tm = !pendingHeading ? line.match(TITLE_TEXT_REGEX) : null;
+      if (tm) {
+        current = {
+          id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          ref: tm[1].trim(), version: '', isBiblical: false, verseNum: '', text: tm[2].trim(), wordMarks: {}, drawData: null
+        };
+      } else {
+        const title = pendingHeading || ('Texto ' + (result.length + 1));
+        pendingHeading = '';
+        current = {
+          id: 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          ref: title, version: '', isBiblical: false, verseNum: '', text: line, wordMarks: {}, drawData: null
+        };
+      }
+    }
+
+    if (current) result.push(current);
+
+    result.forEach(v => {
+      if (v.isBiblical) {
+        if (!v.text) v.text = '(Solo referencia cargada — pega el texto o carga una Biblia local .json)';
+        else v.text = v.text.replace(/^\d+\s+/, '');
+      }
+    });
+    return result;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderList() {
+    const q = (searchInput.value || '').toLowerCase().trim();
+    const filtered = verses
+      .map((v, idx) => ({ v, idx }))
+      .filter(({ v }) => !q || v.ref.toLowerCase().includes(q) || v.text.toLowerCase().includes(q));
+
+    verseCountEl.textContent = verses.length;
+    sbVerseCountEl.textContent = verses.length;
+
+    if (filtered.length === 0) {
+      verseListEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:#64748b;">No hay textos cargados. Ve a <strong>Cargar y Configurar</strong> en el menú lateral para subir un PDF, MD, TXT o pegar versículos.</div>';
+      return;
+    }
+
+    verseListEl.innerHTML = filtered.map(({ v, idx }) => {
+      const hasMarks = (v.wordMarks && Object.keys(v.wordMarks).length > 0) || Boolean(v.drawData);
+      return `
+        <div class="verse-card" data-idx="${idx}">
+          <div class="vc-top">
+            <span class="vc-ref">${escapeHtml(v.ref)}</span>
+            <div class="vc-badges">
+              ${hasMarks ? '<span class="vc-marked">Marcado</span>' : ''}
+              ${v.version ? `<span class="vc-ver">${escapeHtml(v.version)}</span>` : ''}
+            </div>
+          </div>
+          <div class="vc-preview">${escapeHtml(v.text)}</div>
+          <div class="vc-footer">
+            <span>Clic para abrir en pizarra</span>
+            <button class="vc-del" data-del="${idx}" title="Eliminar">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  verseListEl.addEventListener('click', (e) => {
+    const delBtn = e.target.closest('[data-del]');
+    if (delBtn) {
+      e.stopPropagation();
+      verses.splice(parseInt(delBtn.dataset.del, 10), 1);
+      saveState();
+      renderList();
+      return;
+    }
+    const card = e.target.closest('.verse-card');
+    if (card) openBoard(parseInt(card.dataset.idx, 10));
+  });
+  searchInput.addEventListener('input', renderList);
+
+  // ===== CARGA DE ARCHIVOS =====
+  async function handleFile(file) {
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    try {
+      let text = '';
+      if (ext === 'pdf') {
+        showToast('Leyendo PDF sin internet...');
+        const buf = await file.arrayBuffer();
+        text = await window.extractPdfTextOffline(buf);
+        if (!text || text.length < 3) {
+          showToast('No se detectó texto seleccionable en el PDF (puede ser escaneado).');
+          return;
+        }
+      } else {
+        text = await file.text();
+      }
+      const parsed = parseVersesFromText(text);
+      if (!parsed.length) return showToast('No se encontraron textos en el archivo.');
+      verses = parsed;
+      saveState();
+      renderList();
+      switchView('view-verses');
+      showToast(`✅ ${parsed.length} elemento(s) cargados desde ${file.name}`);
+    } catch (err) {
+      showToast('Error leyendo el archivo: ' + err.message);
+    }
+  }
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => { handleFile(e.target.files[0]); fileInput.value = ''; });
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  document.getElementById('btnReplacePaste').addEventListener('click', () => {
+    const parsed = parseVersesFromText(pasteInput.value);
+    if (!parsed.length) return showToast('Pega al menos un texto o versículo primero.');
+    verses = parsed;
+    saveState();
+    renderList();
+    switchView('view-verses');
+    showToast(`✅ Lista cargada (${parsed.length} elementos)`);
+  });
+
+  document.getElementById('btnAppendPaste').addEventListener('click', () => {
+    const parsed = parseVersesFromText(pasteInput.value);
+    if (!parsed.length) return showToast('Pega al menos un texto o versículo primero.');
+    verses = verses.concat(parsed);
+    saveState();
+    renderList();
+    switchView('view-verses');
+    showToast(`➕ ${parsed.length} elemento(s) agregados`);
+  });
+
+  document.getElementById('btnLoadSample').addEventListener('click', () => {
+    verses = JSON.parse(JSON.stringify(SAMPLE_VERSES));
+    saveState();
+    renderList();
+    switchView('view-verses');
+    showToast('✨ Ejemplo cargado');
+  });
+
+  document.getElementById('btnClearList').addEventListener('click', () => {
+    if (!confirm('¿Borrar todos los textos de la lista actual?')) return;
+    verses = [];
+    saveState();
+    renderList();
+  });
+
+  const bibleJsonInput = document.getElementById('bibleJsonInput');
+  document.getElementById('btnLoadBibleJson').addEventListener('click', () => bibleJsonInput.click());
+  bibleJsonInput.addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      const obj = JSON.parse(await f.text());
+      localBibleMap = {};
+      Object.keys(obj).forEach(k => { localBibleMap[k.toLowerCase().trim()] = obj[k]; });
+      showToast(`📚 Biblia local cargada (${Object.keys(localBibleMap).length} elementos)`);
+    } catch (err) { showToast('Archivo JSON inválido.'); }
+    bibleJsonInput.value = '';
+  });
+
+  document.getElementById('btnExportSession').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(verses, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sesion_pizarra_biblica.json';
+    a.click();
+    showToast('💾 Sesión exportada');
+  });
+
+  const sessionJsonInput = document.getElementById('sessionJsonInput');
+  document.getElementById('btnImportSession').addEventListener('click', () => sessionJsonInput.click());
+  sessionJsonInput.addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (Array.isArray(data)) {
+        verses = data;
+        saveState();
+        renderList();
+        switchView('view-verses');
+        showToast('📂 Sesión importada con éxito');
+      }
+    } catch (err) { showToast('No se pudo leer el archivo de sesión.'); }
+    sessionJsonInput.value = '';
+  });
+
+  // ===== MODO LOOK AT THE BOOK (AUTO-OCULTAR INTELIGENTE + MANUAL) =====
+  function setBarsVisibility(showTop, showBottom) {
+    boardOverlay.classList.toggle('top-hidden', !showTop);
+    boardOverlay.classList.toggle('bottom-hidden', !showBottom);
+  }
+
+  function scheduleAutoHide() {
+    clearTimeout(hideTimer);
+    if (!autoHideEnabled || manualHidden) return;
+    hideTimer = setTimeout(() => {
+      if (!isDrawing && autoHideEnabled && !manualHidden) {
+        setBarsVisibility(false, false);
+      }
+    }, 2200);
+  }
+
+  boardOverlay.addEventListener('mousemove', (e) => {
+    if (!boardOverlay.classList.contains('open') || manualHidden || !autoHideEnabled || isDrawing) return;
+    const h = window.innerHeight;
+    const nearTop = e.clientY <= 82;
+    const nearBottom = e.clientY >= h - (currentTool === 'word' ? 165 : 120);
+
+    if (nearTop || nearBottom) {
+      clearTimeout(hideTimer);
+      setBarsVisibility(nearTop, nearBottom);
+    } else {
+      scheduleAutoHide();
+    }
+  });
+
+  btnAutoHideToggle.addEventListener('click', () => {
+    autoHideEnabled = !autoHideEnabled;
+    btnAutoHideToggle.textContent = autoHideEnabled ? '🎯 Auto-ocultar: SÍ' : '📌 Barras Fijas';
+    btnAutoHideToggle.classList.toggle('active-mode', autoHideEnabled);
+    if (!autoHideEnabled) {
+      clearTimeout(hideTimer);
+      manualHidden = false;
+      boardOverlay.classList.remove('manual-hidden');
+      setBarsVisibility(true, true);
+    } else {
+      scheduleAutoHide();
+    }
+  });
+
+  function toggleManualHide() {
+    manualHidden = !manualHidden;
+    boardOverlay.classList.toggle('manual-hidden', manualHidden);
+    if (manualHidden) {
+      clearTimeout(hideTimer);
+      setBarsVisibility(false, false);
+    } else {
+      setBarsVisibility(true, true);
+      scheduleAutoHide();
+    }
+  }
+
+  document.getElementById('btnHideBars').addEventListener('click', toggleManualHide);
+  document.getElementById('btnRestoreBars').addEventListener('click', toggleManualHide);
+
+  // ===== PIZARRA INTERACTIVA =====
+  function buildColorPalette() {
+    const pal = document.getElementById('colorPalette');
+    pal.innerHTML = COLORS.map(c => `
+      <button class="color-dot ${c.hex === currentColor ? 'active' : ''}"
+              data-color="${c.hex}" title="${c.name}" style="background:${c.hex};"></button>
+    `).join('');
+  }
+  buildColorPalette();
+
+  document.getElementById('colorPalette').addEventListener('click', (e) => {
+    const dot = e.target.closest('.color-dot');
+    if (!dot) return;
+    currentColor = dot.dataset.color;
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+    dot.classList.add('active');
+  });
+
+  document.querySelectorAll('#boardBottomBar [data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentTool = btn.dataset.tool;
+      document.querySelectorAll('#boardBottomBar [data-tool]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      boardOverlay.classList.toggle('word-mode', currentTool === 'word');
+    });
+  });
+
+  document.querySelectorAll('#wordStyleBar [data-wstyle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentWordStyle = btn.dataset.wstyle;
+      document.querySelectorAll('#wordStyleBar [data-wstyle]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('#boardBottomBar [data-width]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentWidth = parseInt(btn.dataset.width, 10);
+      document.querySelectorAll('#boardBottomBar [data-width]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    return `rgba(${parseInt(h.substring(0,2),16)},${parseInt(h.substring(2,4),16)},${parseInt(h.substring(4,6),16)},${alpha})`;
+  }
+
+  function renderVerseTokens(v) {
+    const words = v.text.split(/(\s+)/);
+    let wIdx = 0;
+    const numHtml = v.verseNum ? `<span class="verse-num">${escapeHtml(v.verseNum)}</span>` : '';
+    const tokensHtml = words.map(part => {
+      if (/^\s+$/.test(part)) return part;
+      const key = String(wIdx++);
+      const mark = (v.wordMarks && v.wordMarks[key]) || null;
+      let cls = 'w-tok';
+      let style = '';
+      if (mark) {
+        cls += ' wm-' + mark.style;
+        if (mark.style === 'highlight') {
+          style = `background:${hexToRgba(mark.color, 0.32)};color:${mark.color === '#ffffff' ? '#000' : 'inherit'};`;
+        } else if (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy') {
+          style = `text-decoration-color:${mark.color};color:${mark.color};`;
+        } else if (mark.style === 'box' || mark.style === 'circle') {
+          style = `border-color:${mark.color};color:${mark.color};`;
+        }
+      }
+      return `<span class="${cls}" data-widx="${key}" style="${style}">${escapeHtml(part)}</span>`;
+    }).join('');
+
+    stageText.innerHTML = numHtml + tokensHtml;
+    stageText.style.fontSize = currentFontSize + 'px';
+  }
+
+  stageText.addEventListener('click', (e) => {
+    if (currentTool !== 'word' || activeIndex < 0) return;
+    const tok = e.target.closest('.w-tok');
+    if (!tok) return;
+    const v = verses[activeIndex];
+    if (!v.wordMarks) v.wordMarks = {};
+    const key = tok.dataset.widx;
+    if (currentWordStyle === 'clear') delete v.wordMarks[key];
+    else v.wordMarks[key] = { color: currentColor, style: currentWordStyle };
+    renderVerseTokens(v);
+    saveState();
+    if (autoHideEnabled && !manualHidden) setBarsVisibility(false, false);
+  });
+
+  function resizeCanvas(restoreDataUrl) {
+    const rect = boardStage.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (restoreDataUrl) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0);
+      img.src = restoreDataUrl;
+    }
+  }
+
+  function pushUndo() {
+    undoStack.push(canvas.toDataURL());
+    if (undoStack.length > 35) undoStack.shift();
+    redoStack = [];
+  }
+
+  function saveCurrentBoardDraw() {
+    if (activeIndex < 0 || !verses[activeIndex]) return;
+    verses[activeIndex].drawData = canvas.toDataURL();
+    saveState();
+  }
+
+  function openBoard(idx) {
+    if (idx < 0 || idx >= verses.length) return;
+    if (activeIndex >= 0) saveCurrentBoardDraw();
+    activeIndex = idx;
+    const v = verses[idx];
+
+    btRef.textContent = v.ref;
+    const verFull = v.version ? formatVersionLabel(v.version) : '';
+    btSub.textContent = verFull ? `${verFull} · PIZARRA INTERACTIVA` : 'PIZARRA INTERACTIVA';
+    stageRef.textContent = v.ref;
+    if (v.version) {
+      stageVer.textContent = v.version;
+      stageVer.style.display = 'inline-block';
+    } else {
+      stageVer.textContent = '';
+      stageVer.style.display = 'none';
+    }
+    renderVerseTokens(v);
+
+    manualHidden = false;
+    boardOverlay.classList.add('open');
+    boardOverlay.classList.remove('manual-hidden');
+    setBarsVisibility(true, true);
+    scheduleAutoHide();
+
+    undoStack = [];
+    redoStack = [];
+
+    requestAnimationFrame(() => {
+      resizeCanvas(v.drawData);
+      setTimeout(() => { undoStack = [canvas.toDataURL()]; }, 60);
+    });
+  }
+
+  function closeBoard() {
+    clearTimeout(hideTimer);
+    saveCurrentBoardDraw();
+    boardOverlay.classList.remove('open');
+    activeIndex = -1;
+    renderList();
+  }
+
+  // ===== DIBUJO CANVAS =====
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - r.left, y: clientY - r.top };
+  }
+
+  function drawShape(x1, y1, x2, y2) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = currentWidth;
+    ctx.setLineDash(currentTool === 'dashed' ? [currentWidth * 2.4, currentWidth * 1.8] : []);
+
+    ctx.beginPath();
+    if (currentTool === 'line' || currentTool === 'dashed') {
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    } else if (currentTool === 'arrow') {
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const head = Math.max(12, currentWidth * 3.2);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6));
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6));
+      ctx.stroke();
+    } else if (currentTool === 'rect') {
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    } else if (currentTool === 'circle') {
+      ctx.ellipse((x1 + x2) / 2, (y1 + y2) / 2, Math.abs(x2 - x1) / 2, Math.abs(y2 - y1) / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (currentTool === 'triangle') {
+      ctx.moveTo((x1 + x2) / 2, y1); ctx.lineTo(x2, y2); ctx.lineTo(x1, y2); ctx.closePath(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function startDraw(e) {
+    if (currentTool === 'word') return;
+    e.preventDefault();
+    isDrawing = true;
+    // Estilo Look at the Book: al empezar a trazar, desaparecen las barras de inmediato
+    if (autoHideEnabled && !manualHidden) {
+      clearTimeout(hideTimer);
+      setBarsVisibility(false, false);
+    }
+    const p = getPos(e);
+    startX = p.x; startY = p.y;
+    snapshotImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    if (currentTool === 'pen' || currentTool === 'highlighter' || currentTool === 'eraser') {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+    }
+  }
+
+  function moveDraw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    if (currentTool === 'pen' || currentTool === 'highlighter' || currentTool === 'eraser') {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      if (currentTool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = currentWidth * 4;
+      } else if (currentTool === 'highlighter') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = hexToRgba(currentColor, 0.28);
+        ctx.lineWidth = currentWidth * 4.5;
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = currentWidth;
+      }
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    } else {
+      ctx.putImageData(snapshotImageData, 0, 0);
+      drawShape(startX, startY, p.x, p.y);
+    }
+  }
+
+  function endDraw() {
+    if (!isDrawing) return;
+    isDrawing = false;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.restore && ctx.restore();
+    pushUndo();
+    saveCurrentBoardDraw();
+  }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', moveDraw, { passive: false });
+  window.addEventListener('touchend', endDraw);
+
+  document.getElementById('btnUndo').addEventListener('click', () => {
+    if (undoStack.length <= 1) return;
+    redoStack.push(undoStack.pop());
+    resizeCanvas(undoStack[undoStack.length - 1]);
+    saveCurrentBoardDraw();
+  });
+
+  document.getElementById('btnRedo').addEventListener('click', () => {
+    if (!redoStack.length) return;
+    const next = redoStack.pop();
+    undoStack.push(next);
+    resizeCanvas(next);
+    saveCurrentBoardDraw();
+  });
+
+  document.getElementById('btnClearMarks').addEventListener('click', () => {
+    if (activeIndex < 0) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    verses[activeIndex].wordMarks = {};
+    verses[activeIndex].drawData = null;
+    renderVerseTokens(verses[activeIndex]);
+    pushUndo();
+    saveState();
+  });
+
+  document.getElementById('btnCloseBoard').addEventListener('click', closeBoard);
+  document.getElementById('btnPrevVerse').addEventListener('click', () => { if (activeIndex > 0) openBoard(activeIndex - 1); });
+  document.getElementById('btnNextVerse').addEventListener('click', () => { if (activeIndex < verses.length - 1) openBoard(activeIndex + 1); });
+
+  document.getElementById('btnFontDec').addEventListener('click', () => {
+    currentFontSize = Math.max(20, currentFontSize - 4);
+    stageText.style.fontSize = currentFontSize + 'px';
+    document.getElementById('fontSizeLabel').textContent = currentFontSize + 'px';
+  });
+  document.getElementById('btnFontInc').addEventListener('click', () => {
+    currentFontSize = Math.min(72, currentFontSize + 4);
+    stageText.style.fontSize = currentFontSize + 'px';
+    document.getElementById('fontSizeLabel').textContent = currentFontSize + 'px';
+  });
+
+  document.getElementById('btnThemeToggle').addEventListener('click', () => {
+    boardOverlay.classList.remove(THEMES[themeIdx].cls);
+    themeIdx = (themeIdx + 1) % THEMES.length;
+    boardOverlay.classList.add(THEMES[themeIdx].cls);
+    document.getElementById('btnThemeToggle').textContent = THEMES[themeIdx].label;
+  });
+
+  document.getElementById('btnCopyVerse').addEventListener('click', () => {
+    if (activeIndex < 0) return;
+    const v = verses[activeIndex];
+    const headerTxt = v.version ? `${v.ref} (${v.version})` : v.ref;
+    navigator.clipboard.writeText(`${headerTxt}\n${v.text}`).then(() => showToast('📋 Texto copiado'));
+  });
+
+  document.getElementById('btnFullscreen').addEventListener('click', () => {
+    if (!document.fullscreenElement) boardOverlay.requestFullscreen && boardOverlay.requestFullscreen();
+    else document.exitFullscreen && document.exitFullscreen();
+  });
+
+  document.getElementById('btnSavePng').addEventListener('click', () => {
+    if (activeIndex < 0) return;
+    const v = verses[activeIndex];
+    const out = document.createElement('canvas');
+    out.width = canvas.width || 1280;
+    out.height = canvas.height || 720;
+    const octx = out.getContext('2d');
+    const bgColors = ['#000000', '#111827', '#faf8f2'];
+    const txtColors = ['#ffffff', '#f8fafc', '#1e293b'];
+    octx.fillStyle = bgColors[themeIdx];
+    octx.fillRect(0, 0, out.width, out.height);
+
+    const padX = Math.max(80, (out.width - 900) / 2);
+    let y = out.height * 0.32;
+    octx.fillStyle = themeIdx === 2 ? '#b45309' : '#f5b922';
+    octx.font = 'bold 26px "Segoe UI", sans-serif';
+    octx.fillText(v.version ? `${v.ref}  [${v.version}]` : v.ref, padX, y);
+
+    y += currentFontSize * 1.45;
+    octx.fillStyle = txtColors[themeIdx];
+    octx.font = `${currentFontSize}px "Segoe UI", sans-serif`;
+    const maxW = out.width - padX * 2;
+    const words = (v.verseNum ? v.verseNum + ' ' : '') + v.text;
+    let line = '';
+    for (const w of words.split(' ')) {
+      const test = line ? line + ' ' + w : w;
+      if (octx.measureText(test).width > maxW && line) {
+        octx.fillText(line, padX, y);
+        line = w;
+        y += currentFontSize * 1.5;
+      } else line = test;
+    }
+    if (line) octx.fillText(line, padX, y);
+    octx.drawImage(canvas, 0, 0);
+
+    const a = document.createElement('a');
+    a.download = v.ref.replace(/[:\s]+/g, '_') + '.png';
+    a.href = out.toDataURL('image/png');
+    a.click();
+    showToast('⬇ Imagen PNG guardada');
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (!boardOverlay.classList.contains('open')) return;
+    if (e.key === 'Escape') closeBoard();
+    if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey) toggleManualHide();
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); document.getElementById('btnUndo').click(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); document.getElementById('btnRedo').click(); }
+  });
+
+  window.addEventListener('resize', () => {
+    if (boardOverlay.classList.contains('open') && activeIndex >= 0) resizeCanvas(verses[activeIndex].drawData);
+  });
+
+  loadState();
+  renderList();
+})();
+</script>
+</body>
+</html>

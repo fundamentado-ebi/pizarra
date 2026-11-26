@@ -1,0 +1,12 @@
+PIZARRA BÍBLICA INTERACTIVA — 100% OFFLINE
+==========================================
+
+Cómo usar sin internet:
+1. Descomprime esta carpeta ZIP en tu computador.
+2. Haz doble clic en "index.html" (se abrirá en Chrome, Edge, Firefox o Safari).
+3. Carga cualquier archivo .PDF (texto seleccionable), .MD o .TXT arrastrándolo a la zona superior, o pega tus versículos directamente.
+4. Haz clic en cualquier versículo del listado para abrirlo en ventana completa con:
+   - Botón para alternar el fondo (Pizarra Negra / Oscuro / Claro).
+   - Capa 1 (Palabra): marca palabras individuales con tus 9 colores gramaticales y 6 estilos (Resaltado, Subrayado, Punteado, Ondulado, Cuadrado, Círculo).
+   - Capa 2 (Dibujo): Lápiz, Resaltador, Línea, Línea Punteada, Flecha, Cuadrado, Círculo, Triángulo y Borrador.
+   - Guardado automático local + Exportar/Importar Sesión (.json) + Guardar PNG.
