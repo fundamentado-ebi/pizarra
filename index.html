@@ -17,8 +17,68 @@
     --text-muted: #94a3b8;
     --danger: #ef4444;
     --danger-bg: rgba(239, 68, 68, 0.16);
-    --sidebar-w: 235px;
+    --sidebar-w: 250px;
   }
+
+  /* ===== TEMAS GLOBALES DE TODA LA APLICACIÓN ===== */
+  body.theme-black {
+    --bg-app: #04060a;
+    --bg-sidebar: #080b12;
+    --bg-panel: #0c101a;
+    --bg-card: #101624;
+    --border: #1e273d;
+  }
+
+  body.theme-light {
+    --bg-app: #f3f5f8;
+    --bg-sidebar: #ffffff;
+    --bg-panel: #ffffff;
+    --bg-card: #ffffff;
+    --border: #d8e0ec;
+    --gold: #b45309;
+    --gold-soft: rgba(180, 83, 9, 0.11);
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --danger: #dc2626;
+    --danger-bg: rgba(220, 38, 38, 0.10);
+  }
+
+  body.theme-light .sb-brand-text h1,
+  body.theme-light .view-header h2,
+  body.theme-light .drop-zone strong { color: #0f172a; }
+  body.theme-light .sb-nav-btn { color: #334155; }
+  body.theme-light .sb-nav-btn:hover { background: #f1f5f9; color: #0f172a; }
+  body.theme-light .sb-badge { background: #e2e8f0; color: #334155; }
+  body.theme-light .sb-collapse-btn:hover { color: #0f172a; }
+  body.theme-light .sb-sub-item { color: #334155; }
+  body.theme-light .sb-sub-item:hover { background: #f1f5f9; color: #0f172a; }
+  body.theme-light .sb-sub-toggle { color: #475569; }
+  body.theme-light .sb-sub-toggle:hover { background: #e2e8f0; color: #0f172a; }
+  body.theme-light .btn { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
+  body.theme-light .btn:hover { background: #e2e8f0; border-color: #94a3b8; color: #0f172a; }
+  body.theme-light .btn-gold { background: var(--gold-soft); border-color: rgba(180, 83, 9, 0.35); color: var(--gold); }
+  body.theme-light .btn-gold:hover { background: rgba(180, 83, 9, 0.18); color: #92400e; }
+  body.theme-light .btn-danger { background: var(--danger-bg); border-color: rgba(220, 38, 38, 0.35); color: #b91c1c; }
+  body.theme-light .btn-danger:hover { background: rgba(220, 38, 38, 0.2); color: #991b1b; }
+  body.theme-light .search-input,
+  body.theme-light .paste-box textarea,
+  body.theme-light .bible-select { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+  body.theme-light .drop-zone { background: #f8fafc; border-color: #cbd5e1; }
+  body.theme-light .drop-zone:hover,
+  body.theme-light .drop-zone.dragover { background: rgba(180, 83, 9, 0.06); border-color: var(--gold); }
+  body.theme-light .mode-bar { background: #f8fafc; border-color: #dbe1ea; }
+  body.theme-light .mode-switch { background: #e2e8f0; border-color: #cbd5e1; }
+  body.theme-light .mode-btn { color: #475569; }
+  body.theme-light .mode-btn:hover { color: #0f172a; }
+  body.theme-light .mode-btn.active { background: #ffffff; color: var(--gold); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  body.theme-light .bible-status { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+  body.theme-light .bible-status.ok { color: #15803d; border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.1); }
+  body.theme-light .bible-status.warn { color: #b45309; border-color: rgba(180,83,9,0.35); background: rgba(180,83,9,0.1); }
+  body.theme-light .verse-card:hover { box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+  body.theme-light .vc-ver { background: #e2e8f0; color: #334155; }
+  body.theme-light .vc-preview { color: #334155; }
+  body.theme-light .vc-marked { background: rgba(22,163,74,0.12); color: #15803d; border-color: rgba(22,163,74,0.35); }
+  body.theme-light .status-toast { background: #0f172a; color: #ffffff; }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -55,8 +115,10 @@
   }
   .sidebar.collapsed .sb-text,
   .sidebar.collapsed .sb-brand-text,
-  .sidebar.collapsed .sb-footer-note {
-    display: none;
+  .sidebar.collapsed .sb-footer-note,
+  .sidebar.collapsed .sb-sublist-wrap,
+  .sidebar.collapsed .sb-sub-toggle {
+    display: none !important;
   }
   .sidebar.collapsed .sb-nav-btn {
     justify-content: center;
@@ -126,6 +188,8 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    flex: 1;
+    min-height: 0;
   }
   .sb-nav-btn {
     width: 100%;
@@ -166,6 +230,84 @@
     background: rgba(245, 185, 34, 0.22);
     color: var(--gold);
   }
+  .sb-textos-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .sb-textos-row .sb-nav-btn {
+    flex: 1;
+    min-width: 0;
+  }
+  .sb-sub-toggle {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    width: 30px;
+    height: 38px;
+    border-radius: 9px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .sb-sub-toggle:hover { background: #161f35; color: #fff; }
+  .sb-sublist-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin-top: 2px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    gap: 3px;
+    scrollbar-width: thin;
+  }
+  .sb-sublist-wrap.closed { display: none; }
+  .sb-sub-item {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 7px 9px;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    text-align: left;
+    transition: all 0.14s ease;
+  }
+  .sb-sub-item:hover {
+    background: #161f35;
+    border-color: rgba(245, 185, 34, 0.35);
+    color: #fff;
+  }
+  .sb-sub-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sb-sub-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4ade80;
+    flex-shrink: 0;
+  }
+  .sb-sub-empty {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 8px 6px;
+    font-style: italic;
+  }
 
   .sb-footer-note {
     margin-top: auto;
@@ -201,7 +343,7 @@
       gap: 10px;
     }
     .sb-nav { flex-direction: row; }
-    .sb-collapse-btn, .sb-footer-note { display: none; }
+    .sb-collapse-btn, .sb-footer-note, .sb-sublist-wrap, .sb-sub-toggle { display: none; }
     .main-content { padding: 18px 14px 40px; }
   }
 
@@ -779,11 +921,29 @@
   .board-overlay:not(.word-mode) #drawCanvas { pointer-events: auto; cursor: crosshair; }
 
   .wm-highlight { padding: 1px 6px; border-radius: 6px; }
+  .wm-bottom-bar { padding: 1px 5px; border-radius: 4px; }
+  .wm-solid-block { padding: 1px 6px; border-radius: 5px; }
   .wm-underline { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 3px; }
-  .wm-dotted { text-decoration: underline dotted; text-underline-offset: 6px; text-decoration-thickness: 3px; }
   .wm-wavy { text-decoration: underline wavy; text-underline-offset: 6px; text-decoration-thickness: 2.5px; }
+  .wm-dotted { text-decoration: underline dotted; text-underline-offset: 6px; text-decoration-thickness: 3px; }
+  .wm-dashed { text-decoration: underline dashed; text-underline-offset: 6px; text-decoration-thickness: 3px; }
+  .wm-arrow-left {
+    padding: 1px 10px 1px 16px;
+    clip-path: polygon(12px 0%, 100% 0%, 100% 100%, 12px 100%, 0% 50%);
+  }
+  .wm-arrow-right {
+    padding: 1px 16px 1px 10px;
+    clip-path: polygon(0% 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%);
+  }
+  .wm-arrow-both {
+    padding: 1px 16px;
+    clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
+  }
   .wm-box { border: 2.5px solid currentColor; padding: 0 6px; border-radius: 6px; }
   .wm-circle { border: 2.5px solid currentColor; padding: 0 10px; border-radius: 999px; }
+  .bb-tools-group { display: inline-flex; align-items: center; gap: 5px; }
+  .board-overlay.word-mode #drawToolsGroup { display: none; }
+  .board-overlay:not(.word-mode) #wordToolsGroup { display: none; }
 
   #drawCanvas {
     position: absolute;
@@ -930,15 +1090,21 @@
     </div>
 
     <nav class="sb-nav">
-      <button class="sb-nav-btn active" data-view="view-verses">
-        <span class="sb-nav-icon">📑</span>
-        <span class="sb-text">Textos</span>
-        <span class="sb-badge sb-text" id="sbVerseCount">0</span>
-      </button>
-      <button class="sb-nav-btn" data-view="view-config">
+      <button class="sb-nav-btn active" data-view="view-config">
         <span class="sb-nav-icon">⚙️</span>
         <span class="sb-text">Cargar y Configurar</span>
       </button>
+
+      <div class="sb-textos-row">
+        <button class="sb-nav-btn" data-view="view-verses">
+          <span class="sb-nav-icon">📑</span>
+          <span class="sb-text">Textos</span>
+          <span class="sb-badge sb-text" id="sbVerseCount">0</span>
+        </button>
+        <button class="sb-sub-toggle" id="btnToggleSublist" title="Mostrar / ocultar listado rápido">▾</button>
+      </div>
+
+      <div class="sb-sublist-wrap" id="sbVerseSublist"></div>
     </nav>
 
 
@@ -947,7 +1113,7 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main class="main-content">
     <!-- VISTA 1: LISTADO DE VERSÍCULOS (LIMPIO, SIN CAJAS DE CARGA) -->
-    <section class="view-panel active" id="view-verses">
+    <section class="view-panel" id="view-verses">
       <div class="view-header">
         <h2>📑 Textos Cargados <span class="count-pill" id="verseCount">0</span></h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -959,7 +1125,7 @@
     </section>
 
     <!-- VISTA 2: CARGAR Y CONFIGURAR -->
-    <section class="view-panel" id="view-config">
+    <section class="view-panel active" id="view-config">
       <div class="view-header">
         <h2>⚙️ Cargar Textos y Configuración</h2>
         <button class="btn" id="btnBackToVerses">← Ver Textos</button>
@@ -1032,9 +1198,16 @@
       </div>
 
       <div class="config-card">
-        <h3>🛠️ Gestión de Sesión y Biblia Local</h3>
-        <div class="config-actions-row">
-          <button class="btn btn-gold" id="btnLoadSample">✨ Cargar Ejemplo</button>
+        <h3>🛠️ Apariencia, Sesión y Biblia Local</h3>
+        <div class="config-actions-row" style="align-items:center;">
+          <div style="display:inline-flex;align-items:center;gap:8px;margin-right:6px;">
+            <label for="appThemeSelect" style="font-size:0.82rem;color:var(--text-muted);font-weight:600;">Tema:</label>
+            <select id="appThemeSelect" class="bible-select" title="Cambiar apariencia de toda la aplicación y la pizarra">
+              <option value="0">🌑 Pizarra (Negro)</option>
+              <option value="1">🌌 Oscuro (Azul Noche)</option>
+              <option value="2">📄 Claro (Día)</option>
+            </select>
+          </div>
           <button class="btn" id="btnLoadBibleJson" title="Opcional: cargar archivo local de Biblia (.json) para resolver listas de solo referencias sin internet">📚 Biblia Local (.json)</button>
           <button class="btn" id="btnExportSession">💾 Guardar Sesión (.json)</button>
           <button class="btn" id="btnImportSession">📂 Abrir Sesión (.json)</button>
@@ -1105,33 +1278,43 @@
     <canvas id="drawCanvas"></canvas>
   </div>
 
-  <!-- Sub-barra de estilos para Capa 1 (Marcado sobre palabras) -->
-  <div class="word-style-bar" id="wordStyleBar">
-    <span style="font-size:0.75rem;color:#94a3b8;font-weight:700;margin-right:4px;">Estilo palabra:</span>
-    <button class="tool-btn active" data-wstyle="highlight">Resaltado</button>
-    <button class="tool-btn" data-wstyle="underline">Subrayado</button>
-    <button class="tool-btn" data-wstyle="dotted">Punteado</button>
-    <button class="tool-btn" data-wstyle="wavy">Ondulado</button>
-    <button class="tool-btn" data-wstyle="box">Cuadrado</button>
-    <button class="tool-btn" data-wstyle="circle">Círculo</button>
-    <button class="tool-btn" data-wstyle="clear">Quitar marca</button>
-  </div>
-
-  <!-- Barra inferior flotante (2 líneas equilibradas) -->
+  <!-- Barra inferior flotante (siempre 2 líneas limpias, sin barras extra) -->
   <div class="board-bottombar" id="boardBottomBar">
-    <!-- Fila 1: Herramientas de marcado y figuras -->
+    <!-- Fila 1: Interruptor Palabra + herramientas activas según modo -->
     <div class="bb-row">
-      <button class="tool-btn" data-tool="word" title="Capa 1: Marcar palabras con 9 colores y estilos">🔤 Palabra</button>
+      <button class="tool-btn" id="btnWordMode" title="Alternar entre Dibujo libre y Marcado sobre palabras">🔤 Palabra</button>
       <div class="tool-sep"></div>
-      <button class="tool-btn active" data-tool="pen" title="Lápiz libre">✏️ Lápiz</button>
-      <button class="tool-btn" data-tool="highlighter" title="Resaltador libre">🖍️ Resaltar</button>
-      <button class="tool-btn" data-tool="line" title="Línea recta">— Línea</button>
-      <button class="tool-btn" data-tool="dashed" title="Línea punteada">┄ Punteada</button>
-      <button class="tool-btn" data-tool="arrow" title="Flecha">➜ Flecha</button>
-      <button class="tool-btn" data-tool="rect" title="Cuadrado / Rectángulo">□ Cuadrado</button>
-      <button class="tool-btn" data-tool="circle" title="Círculo / Óvalo">○ Círculo</button>
-      <button class="tool-btn" data-tool="triangle" title="Triángulo">△ Triángulo</button>
-      <button class="tool-btn" data-tool="eraser" title="Borrador">🧹 Borrar</button>
+
+      <!-- Grupo A: Herramientas de dibujo libre (Canvas) -->
+      <div class="bb-tools-group" id="drawToolsGroup">
+        <button class="tool-btn active" data-tool="pen" title="Lápiz libre">✏️ Lápiz</button>
+        <button class="tool-btn" data-tool="highlighter" title="Resaltador libre">🖍️ Resaltar</button>
+        <button class="tool-btn" data-tool="line" title="Línea recta">— Línea</button>
+        <button class="tool-btn" data-tool="dashed" title="Línea punteada">┄ Punteada</button>
+        <button class="tool-btn" data-tool="wavy" title="Línea ondulada">〰 Ondulada</button>
+        <button class="tool-btn" data-tool="arrow" title="Flecha">➜ Flecha</button>
+        <button class="tool-btn" data-tool="rect" title="Cuadrado / Rectángulo">□ Cuadrado</button>
+        <button class="tool-btn" data-tool="circle" title="Círculo / Óvalo">○ Círculo</button>
+        <button class="tool-btn" data-tool="triangle" title="Triángulo">△ Triángulo</button>
+        <button class="tool-btn" data-tool="eraser" title="Borrador">🧹 Borrar</button>
+      </div>
+
+      <!-- Grupo B: Herramientas de marcado directo sobre palabras (Capa 1) -->
+      <div class="bb-tools-group" id="wordToolsGroup">
+        <button class="tool-btn active" data-wstyle="highlight" title="Resaltado suave">Resaltado</button>
+        <button class="tool-btn" data-wstyle="bottom-bar" title="Resaltado grueso inferior">▁ Bajo</button>
+        <button class="tool-btn" data-wstyle="solid-block" title="Bloque resaltado sólido">■ Bloque</button>
+        <button class="tool-btn" data-wstyle="underline" title="Subrayado continuo">— Sólido</button>
+        <button class="tool-btn" data-wstyle="wavy" title="Subrayado ondulado">〰 Ondulado</button>
+        <button class="tool-btn" data-wstyle="dotted" title="Subrayado punteado">┄ Punteado</button>
+        <button class="tool-btn" data-wstyle="dashed" title="Subrayado discontinuo">--- Guiones</button>
+        <button class="tool-btn" data-wstyle="arrow-left" title="Flecha izquierda sobre palabra">◀T</button>
+        <button class="tool-btn" data-wstyle="arrow-right" title="Flecha derecha sobre palabra">T▶</button>
+        <button class="tool-btn" data-wstyle="arrow-both" title="Flecha doble sobre palabra">◀T▶</button>
+        <button class="tool-btn" data-wstyle="box" title="Cuadrado / Caja">□ Cuadro</button>
+        <button class="tool-btn" data-wstyle="circle" title="Círculo / Óvalo">○ Círculo</button>
+        <button class="tool-btn" data-wstyle="clear" title="Quitar marca de la palabra">🧹 Borrar</button>
+      </div>
     </div>
 
     <div class="bb-row-divider"></div>
@@ -1226,7 +1409,9 @@
     { cls: 'theme-slate', label: '🌌 Oscuro' },
     { cls: 'theme-light', label: '📄 Claro' }
   ];
-  let themeIdx = 0;
+  let themeIdx = parseInt(localStorage.getItem('pizarra_theme_idx') || '0', 10);
+  if (isNaN(themeIdx) || themeIdx < 0 || themeIdx >= THEMES.length) themeIdx = 0;
+  let lastDrawTool = 'pen';
 
   // Control Look at the Book (Auto-ocultar y Manual)
   let autoHideEnabled = true;
@@ -1294,13 +1479,13 @@
       const raw = localStorage.getItem('pizarra_biblica_offline_v1');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           verses = parsed;
           return;
         }
       }
     } catch (e) {}
-    verses = JSON.parse(JSON.stringify(SAMPLE_VERSES));
+    verses = [];
   }
 
   // ===== CATÁLOGO DE BIBLIAS EN GITHUB (./biblias/) Y MODO DE TRABAJO =====
@@ -1368,6 +1553,8 @@
     btnModeNormal.classList.toggle('active', workMode === 'normal');
     bibleControlsBar.classList.toggle('hidden', workMode !== 'bible');
     normalControlsBar.classList.toggle('hidden', workMode !== 'normal');
+    const btnBibLocal = document.getElementById('btnLoadBibleJson');
+    if (btnBibLocal) btnBibLocal.style.display = workMode === 'bible' ? 'inline-flex' : 'none';
 
     if (workMode === 'bible') {
       pasteInput.placeholder =
@@ -1978,7 +2165,8 @@
     sbVerseCountEl.textContent = verses.length;
 
     if (filtered.length === 0) {
-      verseListEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:#64748b;">No hay textos cargados. Ve a <strong>Cargar y Configurar</strong> en el menú lateral para subir un PDF, MD, TXT o pegar versículos.</div>';
+      verseListEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--text-muted);">No hay textos cargados. Ve a <strong>Cargar y Configurar</strong> en el menú lateral para subir un PDF, MD, TXT o pegar versículos.</div>';
+      renderSidebarSublist();
       return;
     }
 
@@ -2001,6 +2189,43 @@
         </div>
       `;
     }).join('');
+    renderSidebarSublist();
+  }
+
+  const sbVerseSublist = document.getElementById('sbVerseSublist');
+  const btnToggleSublist = document.getElementById('btnToggleSublist');
+  let sbSublistOpen = true;
+
+  function renderSidebarSublist() {
+    if (!sbVerseSublist) return;
+    if (verses.length === 0) {
+      sbVerseSublist.innerHTML = '<div class="sb-sub-empty">Sin bloques cargados</div>';
+      return;
+    }
+    sbVerseSublist.innerHTML = verses.map((v, idx) => {
+      const hasMarks = (v.wordMarks && Object.keys(v.wordMarks).length > 0) || Boolean(v.drawData);
+      return `
+        <button class="sb-sub-item" data-sbidx="${idx}" title="Abrir ${escapeHtml(v.ref)} en la pizarra">
+          <span class="sb-sub-label">${escapeHtml(v.ref)}</span>
+          ${hasMarks ? '<span class="sb-sub-dot" title="Con marcas"></span>' : ''}
+        </button>
+      `;
+    }).join('');
+  }
+
+  if (sbVerseSublist) {
+    sbVerseSublist.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-sbidx]');
+      if (item) openBoard(parseInt(item.dataset.sbidx, 10));
+    });
+  }
+  if (btnToggleSublist) {
+    btnToggleSublist.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sbSublistOpen = !sbSublistOpen;
+      sbVerseSublist.classList.toggle('closed', !sbSublistOpen);
+      btnToggleSublist.textContent = sbSublistOpen ? '▾' : '▸';
+    });
   }
 
   verseListEl.addEventListener('click', (e) => {
@@ -2199,13 +2424,7 @@
     showToast(`➕ ${parsed.length} elemento(s) agregados`);
   });
 
-  document.getElementById('btnLoadSample').addEventListener('click', () => {
-    verses = JSON.parse(JSON.stringify(SAMPLE_VERSES));
-    saveState();
-    renderList();
-    switchView('view-verses');
-    showToast('✨ Ejemplo cargado');
-  });
+
 
   document.getElementById('btnClearList').addEventListener('click', () => {
     if (!confirm('¿Borrar todos los textos de la lista actual?')) return;
@@ -2321,7 +2540,7 @@
     if (!boardOverlay.classList.contains('open') || manualHidden || !autoHideEnabled || isDrawing) return;
     const h = window.innerHeight;
     const nearTop = e.clientY <= 82;
-    const nearBottom = e.clientY >= h - (currentTool === 'word' ? 165 : 120);
+    const nearBottom = e.clientY >= h - 120;
 
     if (nearTop || nearBottom) {
       clearTimeout(hideTimer);
@@ -2378,19 +2597,40 @@
     dot.classList.add('active');
   });
 
-  document.querySelectorAll('#boardBottomBar [data-tool]').forEach(btn => {
+  const btnWordMode = document.getElementById('btnWordMode');
+  function setWordMode(enabled) {
+    boardOverlay.classList.toggle('word-mode', enabled);
+    btnWordMode.classList.toggle('active', enabled);
+    if (enabled) {
+      if (currentTool !== 'word') lastDrawTool = currentTool;
+      currentTool = 'word';
+    } else {
+      currentTool = lastDrawTool || 'pen';
+      document.querySelectorAll('#drawToolsGroup [data-tool]').forEach(b => {
+        b.classList.toggle('active', b.dataset.tool === currentTool);
+      });
+    }
+  }
+
+  btnWordMode.addEventListener('click', () => {
+    setWordMode(currentTool !== 'word');
+  });
+
+  document.querySelectorAll('#drawToolsGroup [data-tool]').forEach(btn => {
     btn.addEventListener('click', () => {
+      lastDrawTool = btn.dataset.tool;
       currentTool = btn.dataset.tool;
-      document.querySelectorAll('#boardBottomBar [data-tool]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#drawToolsGroup [data-tool]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      boardOverlay.classList.toggle('word-mode', currentTool === 'word');
+      boardOverlay.classList.remove('word-mode');
+      btnWordMode.classList.remove('active');
     });
   });
 
-  document.querySelectorAll('#wordStyleBar [data-wstyle]').forEach(btn => {
+  document.querySelectorAll('#wordToolsGroup [data-wstyle]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentWordStyle = btn.dataset.wstyle;
-      document.querySelectorAll('#wordStyleBar [data-wstyle]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#wordToolsGroup [data-wstyle]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   });
@@ -2435,8 +2675,14 @@
           cls += ' wm-' + mark.style;
           if (mark.style === 'highlight') {
             style = `background:${hexToRgba(mark.color, 0.32)};color:${mark.color === '#ffffff' ? '#000' : 'inherit'};`;
-          } else if (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy') {
+          } else if (mark.style === 'bottom-bar') {
+            style = `background:linear-gradient(to top, ${hexToRgba(mark.color, 0.72)} 0%, ${hexToRgba(mark.color, 0.72)} 34%, transparent 34%);`;
+          } else if (mark.style === 'solid-block') {
+            style = `background:${hexToRgba(mark.color, 0.78)};color:${mark.color === '#ffffff' || mark.color === '#f5b922' ? '#0f172a' : '#ffffff'};`;
+          } else if (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy' || mark.style === 'dashed') {
             style = `text-decoration-color:${mark.color};color:${mark.color};`;
+          } else if (mark.style === 'arrow-left' || mark.style === 'arrow-right' || mark.style === 'arrow-both') {
+            style = `background:${hexToRgba(mark.color, 0.42)};color:${mark.color === '#ffffff' ? '#0f172a' : 'inherit'};`;
           } else if (mark.style === 'box' || mark.style === 'circle') {
             style = `border-color:${mark.color};color:${mark.color};`;
           }
@@ -2565,6 +2811,28 @@
     ctx.beginPath();
     if (currentTool === 'line' || currentTool === 'dashed') {
       ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    } else if (currentTool === 'wavy') {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 2) {
+        const angle = Math.atan2(dy, dx);
+        const waveLen = Math.max(10, currentWidth * 2.8);
+        const amp = Math.max(4, currentWidth * 1.15);
+        ctx.save();
+        ctx.translate(x1, y1);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        let dir = -1;
+        for (let px = 0; px < dist; px += waveLen) {
+          const nx = Math.min(dist, px + waveLen);
+          ctx.quadraticCurveTo((px + nx) / 2, dir * amp, nx, 0);
+          dir *= -1;
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
     } else if (currentTool === 'arrow') {
       ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       const angle = Math.atan2(y2 - y1, x2 - x1);
@@ -2690,11 +2958,26 @@
     if (activeIndex >= 0) requestAnimationFrame(() => resizeCanvas(verses[activeIndex].drawData));
   });
 
+  const appThemeSelect = document.getElementById('appThemeSelect');
+  function applyAppTheme(idx) {
+    THEMES.forEach(t => {
+      document.body.classList.remove(t.cls);
+      boardOverlay.classList.remove(t.cls);
+    });
+    themeIdx = ((idx % THEMES.length) + THEMES.length) % THEMES.length;
+    const t = THEMES[themeIdx];
+    document.body.classList.add(t.cls);
+    boardOverlay.classList.add(t.cls);
+    document.getElementById('btnThemeToggle').textContent = t.label;
+    if (appThemeSelect) appThemeSelect.value = String(themeIdx);
+    try { localStorage.setItem('pizarra_theme_idx', String(themeIdx)); } catch (e) {}
+  }
+
+  if (appThemeSelect) {
+    appThemeSelect.addEventListener('change', () => applyAppTheme(parseInt(appThemeSelect.value, 10)));
+  }
   document.getElementById('btnThemeToggle').addEventListener('click', () => {
-    boardOverlay.classList.remove(THEMES[themeIdx].cls);
-    themeIdx = (themeIdx + 1) % THEMES.length;
-    boardOverlay.classList.add(THEMES[themeIdx].cls);
-    document.getElementById('btnThemeToggle').textContent = THEMES[themeIdx].label;
+    applyAppTheme(themeIdx + 1);
   });
 
   document.getElementById('btnCopyVerse').addEventListener('click', () => {
@@ -2796,6 +3079,49 @@
           drawRoundedRectPath(octx, x, y + 1, w, h - 2, 6);
           octx.fillStyle = hexToRgba(mark.color, 0.32);
           octx.fill();
+        } else if (mark.style === 'bottom-bar') {
+          const bh = Math.max(6, h * 0.34);
+          drawRoundedRectPath(octx, x, y + h - bh, w, bh, 4);
+          octx.fillStyle = hexToRgba(mark.color, 0.72);
+          octx.fill();
+        } else if (mark.style === 'solid-block') {
+          drawRoundedRectPath(octx, x, y + 1, w, h - 2, 5);
+          octx.fillStyle = hexToRgba(mark.color, 0.78);
+          octx.fill();
+        } else if (mark.style === 'arrow-left') {
+          const tip = Math.min(12, w * 0.25);
+          octx.beginPath();
+          octx.moveTo(x + tip, y + 1);
+          octx.lineTo(x + w, y + 1);
+          octx.lineTo(x + w, y + h - 1);
+          octx.lineTo(x + tip, y + h - 1);
+          octx.lineTo(x, y + h / 2);
+          octx.closePath();
+          octx.fillStyle = hexToRgba(mark.color, 0.42);
+          octx.fill();
+        } else if (mark.style === 'arrow-right') {
+          const tip = Math.min(12, w * 0.25);
+          octx.beginPath();
+          octx.moveTo(x, y + 1);
+          octx.lineTo(x + w - tip, y + 1);
+          octx.lineTo(x + w, y + h / 2);
+          octx.lineTo(x + w - tip, y + h - 1);
+          octx.lineTo(x, y + h - 1);
+          octx.closePath();
+          octx.fillStyle = hexToRgba(mark.color, 0.42);
+          octx.fill();
+        } else if (mark.style === 'arrow-both') {
+          const tip = Math.min(12, w * 0.22);
+          octx.beginPath();
+          octx.moveTo(x + tip, y + 1);
+          octx.lineTo(x + w - tip, y + 1);
+          octx.lineTo(x + w, y + h / 2);
+          octx.lineTo(x + w - tip, y + h - 1);
+          octx.lineTo(x + tip, y + h - 1);
+          octx.lineTo(x, y + h / 2);
+          octx.closePath();
+          octx.fillStyle = hexToRgba(mark.color, 0.42);
+          octx.fill();
         } else if (mark.style === 'box' || mark.style === 'circle') {
           drawRoundedRectPath(octx, x + 1, y + 1, w - 2, h - 2, mark.style === 'circle' ? h / 2 : 6);
           octx.strokeStyle = mark.color;
@@ -2806,15 +3132,16 @@
 
       // Texto de la palabra centrado en su caja exacta
       octx.font = `${cs.fontWeight || '400'} ${cs.fontSize || (currentFontSize + 'px')} ${stageFontFamily}`;
-      octx.fillStyle = (mark && mark.style === 'highlight' && mark.color === '#ffffff')
-        ? '#000000'
-        : (cs.color || txtColors[themeIdx]);
+      octx.fillStyle = cs.color || txtColors[themeIdx];
       octx.textAlign = 'center';
       octx.textBaseline = 'middle';
-      octx.fillText(tok.textContent, x + w / 2, y + h / 2);
+      const padLTok = parseFloat(cs.paddingLeft) || 0;
+      const padRTok = parseFloat(cs.paddingRight) || 0;
+      const textCenterX = x + padLTok + (w - padLTok - padRTok) / 2;
+      octx.fillText(tok.textContent, textCenterX, y + h / 2);
 
-      // Subrayados (sólido, punteado, ondulado)
-      if (mark && (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy')) {
+      // Subrayados (sólido, punteado, discontinuo, ondulado)
+      if (mark && (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'dashed' || mark.style === 'wavy')) {
         const uy = y + h - Math.max(3, currentFontSize * 0.08);
         const padL = parseFloat(cs.paddingLeft) || 3;
         const padR = parseFloat(cs.paddingRight) || 3;
@@ -2831,6 +3158,13 @@
         } else if (mark.style === 'dotted') {
           octx.lineWidth = 3;
           octx.setLineDash([2, 5]);
+          octx.beginPath();
+          octx.moveTo(ux1, uy);
+          octx.lineTo(ux2, uy);
+          octx.stroke();
+        } else if (mark.style === 'dashed') {
+          octx.lineWidth = 3;
+          octx.setLineDash([8, 5]);
           octx.beginPath();
           octx.moveTo(ux1, uy);
           octx.lineTo(ux2, uy);
@@ -2881,6 +3215,7 @@
   });
 
   loadState();
+  applyAppTheme(themeIdx);
   renderList();
   applyWorkMode(workMode);
 })();
