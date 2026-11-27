@@ -941,6 +941,34 @@
   }
   .wm-box { border: 2.5px solid currentColor; padding: 0 6px; border-radius: 6px; }
   .wm-circle { border: 2.5px solid currentColor; padding: 0 10px; border-radius: 999px; }
+  .wm-triangle { padding: 6px 13px 2px; background-repeat: no-repeat; background-size: 100% 100%; }
+  .hl-slider-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #293554;
+    flex-shrink: 0;
+  }
+  .board-overlay.theme-light .hl-slider-wrap {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+  .hl-slider-wrap span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--gold);
+    min-width: 30px;
+    text-align: right;
+  }
+  .hl-slider {
+    width: 68px;
+    accent-color: #f5b922;
+    cursor: pointer;
+    height: 4px;
+  }
   .bb-tools-group { display: inline-flex; align-items: center; gap: 5px; }
   .board-overlay.word-mode #drawToolsGroup { display: none; }
   .board-overlay:not(.word-mode) #wordToolsGroup { display: none; }
@@ -1288,11 +1316,13 @@
       <!-- Grupo A: Herramientas de dibujo libre (Canvas) -->
       <div class="bb-tools-group" id="drawToolsGroup">
         <button class="tool-btn active" data-tool="pen" title="Lápiz libre">✏️ Lápiz</button>
-        <button class="tool-btn" data-tool="highlighter" title="Resaltador libre">🖍️ Resaltar</button>
+        <button class="tool-btn" data-tool="highlighter" title="Resaltador libre (usa la barra de intensidad)">🖍️ Resaltar</button>
         <button class="tool-btn" data-tool="line" title="Línea recta">— Línea</button>
-        <button class="tool-btn" data-tool="dashed" title="Línea punteada">┄ Punteada</button>
         <button class="tool-btn" data-tool="wavy" title="Línea ondulada">〰 Ondulada</button>
+        <button class="tool-btn" data-tool="dotted" title="Línea punteada">┄ Punteada</button>
+        <button class="tool-btn" data-tool="dashed" title="Línea discontinua (guiones)">--- Guiones</button>
         <button class="tool-btn" data-tool="arrow" title="Flecha">➜ Flecha</button>
+        <button class="tool-btn" data-tool="arrow-both" title="Flecha doble">↔ Doble</button>
         <button class="tool-btn" data-tool="rect" title="Cuadrado / Rectángulo">□ Cuadrado</button>
         <button class="tool-btn" data-tool="circle" title="Círculo / Óvalo">○ Círculo</button>
         <button class="tool-btn" data-tool="triangle" title="Triángulo">△ Triángulo</button>
@@ -1301,31 +1331,38 @@
 
       <!-- Grupo B: Herramientas de marcado directo sobre palabras (Capa 1) -->
       <div class="bb-tools-group" id="wordToolsGroup">
-        <button class="tool-btn active" data-wstyle="highlight" title="Resaltado suave">Resaltado</button>
+        <button class="tool-btn active" data-wstyle="highlight" title="Resaltado (usa la barra de intensidad)">🖍️ Resaltar</button>
         <button class="tool-btn" data-wstyle="bottom-bar" title="Resaltado grueso inferior">▁ Bajo</button>
         <button class="tool-btn" data-wstyle="solid-block" title="Bloque resaltado sólido">■ Bloque</button>
-        <button class="tool-btn" data-wstyle="underline" title="Subrayado continuo">— Sólido</button>
-        <button class="tool-btn" data-wstyle="wavy" title="Subrayado ondulado">〰 Ondulado</button>
-        <button class="tool-btn" data-wstyle="dotted" title="Subrayado punteado">┄ Punteado</button>
-        <button class="tool-btn" data-wstyle="dashed" title="Subrayado discontinuo">--- Guiones</button>
+        <button class="tool-btn" data-wstyle="underline" title="Subrayado continuo">— Línea</button>
+        <button class="tool-btn" data-wstyle="wavy" title="Subrayado ondulado">〰 Ondulada</button>
+        <button class="tool-btn" data-wstyle="dotted" title="Subrayado punteado">┄ Punteada</button>
+        <button class="tool-btn" data-wstyle="dashed" title="Subrayado discontinuo (guiones)">--- Guiones</button>
         <button class="tool-btn" data-wstyle="arrow-left" title="Flecha izquierda sobre palabra">◀T</button>
         <button class="tool-btn" data-wstyle="arrow-right" title="Flecha derecha sobre palabra">T▶</button>
         <button class="tool-btn" data-wstyle="arrow-both" title="Flecha doble sobre palabra">◀T▶</button>
-        <button class="tool-btn" data-wstyle="box" title="Cuadrado / Caja">□ Cuadro</button>
+        <button class="tool-btn" data-wstyle="box" title="Cuadrado / Caja">□ Cuadrado</button>
         <button class="tool-btn" data-wstyle="circle" title="Círculo / Óvalo">○ Círculo</button>
+        <button class="tool-btn" data-wstyle="triangle" title="Triángulo alrededor de la palabra">△ Triángulo</button>
         <button class="tool-btn" data-wstyle="clear" title="Quitar marca de la palabra">🧹 Borrar</button>
       </div>
     </div>
 
     <div class="bb-row-divider"></div>
 
-    <!-- Fila 2: Paleta de 9 colores + grosores + deshacer/limpiar -->
+    <!-- Fila 2: Paleta de 9 colores + grosores + intensidad de resaltado + deshacer/limpiar -->
     <div class="bb-row">
       <div id="colorPalette" style="display:flex;align-items:center;gap:6px;"></div>
       <div class="tool-sep"></div>
       <button class="size-btn" data-width="2">• Fino</button>
       <button class="size-btn active" data-width="5">• Medio</button>
       <button class="size-btn" data-width="11">• Grueso</button>
+      <div class="tool-sep"></div>
+      <div class="hl-slider-wrap" title="Intensidad / opacidad del resaltado (10% suave a 90% fuerte)">
+        <label for="hlAlphaSlider" style="font-size:0.74rem;cursor:pointer;">🔆</label>
+        <input type="range" id="hlAlphaSlider" class="hl-slider" min="10" max="90" step="5" value="35" />
+        <span id="hlAlphaLabel">35%</span>
+      </div>
       <div class="tool-sep"></div>
       <button class="tool-btn" id="btnUndo" title="Deshacer (Ctrl+Z)">↶ Deshacer</button>
       <button class="tool-btn" id="btnRedo" title="Rehacer (Ctrl+Y)">↷ Rehacer</button>
@@ -1403,6 +1440,7 @@
   let currentWordStyle = 'highlight';
   let currentColor = '#f5b922';
   let currentWidth = 5;
+  let currentHighlightAlpha = Math.min(0.9, Math.max(0.1, (parseInt(localStorage.getItem('pizarra_hl_alpha') || '35', 10) || 35) / 100));
   let currentFontSize = 38;
   const THEMES = [
     { cls: 'theme-black', label: '🌑 Pizarra' },
@@ -2643,6 +2681,20 @@
     });
   });
 
+  const hlAlphaSlider = document.getElementById('hlAlphaSlider');
+  const hlAlphaLabel = document.getElementById('hlAlphaLabel');
+  if (hlAlphaSlider && hlAlphaLabel) {
+    const pct = Math.round(currentHighlightAlpha * 100);
+    hlAlphaSlider.value = String(pct);
+    hlAlphaLabel.textContent = pct + '%';
+    hlAlphaSlider.addEventListener('input', () => {
+      const val = parseInt(hlAlphaSlider.value, 10) || 35;
+      currentHighlightAlpha = val / 100;
+      hlAlphaLabel.textContent = val + '%';
+      try { localStorage.setItem('pizarra_hl_alpha', String(val)); } catch (e) {}
+    });
+  }
+
   function hexToRgba(hex, alpha) {
     const h = hex.replace('#', '');
     return `rgba(${parseInt(h.substring(0,2),16)},${parseInt(h.substring(2,4),16)},${parseInt(h.substring(4,6),16)},${alpha})`;
@@ -2673,18 +2725,26 @@
         let style = '';
         if (mark) {
           cls += ' wm-' + mark.style;
+          const a = typeof mark.alpha === 'number' ? mark.alpha : 0.35;
+          const isLightColor = mark.color === '#ffffff' || mark.color === '#f5b922';
           if (mark.style === 'highlight') {
-            style = `background:${hexToRgba(mark.color, 0.32)};color:${mark.color === '#ffffff' ? '#000' : 'inherit'};`;
+            style = `background:${hexToRgba(mark.color, a)};color:${isLightColor && a >= 0.5 ? '#0f172a' : 'inherit'};`;
           } else if (mark.style === 'bottom-bar') {
-            style = `background:linear-gradient(to top, ${hexToRgba(mark.color, 0.72)} 0%, ${hexToRgba(mark.color, 0.72)} 34%, transparent 34%);`;
+            const ba = Math.min(0.95, Math.max(0.25, a + 0.25));
+            style = `background:linear-gradient(to top, ${hexToRgba(mark.color, ba)} 0%, ${hexToRgba(mark.color, ba)} 34%, transparent 34%);`;
           } else if (mark.style === 'solid-block') {
-            style = `background:${hexToRgba(mark.color, 0.78)};color:${mark.color === '#ffffff' || mark.color === '#f5b922' ? '#0f172a' : '#ffffff'};`;
+            const sa = Math.min(0.95, Math.max(0.35, a + 0.35));
+            style = `background:${hexToRgba(mark.color, sa)};color:${isLightColor ? '#0f172a' : '#ffffff'};`;
           } else if (mark.style === 'underline' || mark.style === 'dotted' || mark.style === 'wavy' || mark.style === 'dashed') {
             style = `text-decoration-color:${mark.color};color:${mark.color};`;
           } else if (mark.style === 'arrow-left' || mark.style === 'arrow-right' || mark.style === 'arrow-both') {
-            style = `background:${hexToRgba(mark.color, 0.42)};color:${mark.color === '#ffffff' ? '#0f172a' : 'inherit'};`;
+            style = `background:${hexToRgba(mark.color, Math.min(0.9, a + 0.08))};color:${isLightColor && a >= 0.5 ? '#0f172a' : 'inherit'};`;
           } else if (mark.style === 'box' || mark.style === 'circle') {
             style = `border-color:${mark.color};color:${mark.color};`;
+          } else if (mark.style === 'triangle') {
+            const encColor = encodeURIComponent(mark.color);
+            const triSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='50,4 97,96 3,96' fill='none' stroke='${encColor}' stroke-width='5' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E")`;
+            style = `background-image:${triSvg};color:${mark.color};`;
           }
         }
         return `<span class="${cls}" data-widx="${key}" style="${style}">${escapeHtml(part)}</span>`;
@@ -2707,7 +2767,7 @@
     if (!v.wordMarks) v.wordMarks = {};
     const key = tok.dataset.widx;
     if (currentWordStyle === 'clear') delete v.wordMarks[key];
-    else v.wordMarks[key] = { color: currentColor, style: currentWordStyle };
+    else v.wordMarks[key] = { color: currentColor, style: currentWordStyle, alpha: currentHighlightAlpha };
     renderVerseTokens(v);
     saveState();
     if (autoHideEnabled && !manualHidden) setBarsVisibility(false, false);
@@ -2806,10 +2866,16 @@
     ctx.lineJoin = 'round';
     ctx.strokeStyle = currentColor;
     ctx.lineWidth = currentWidth;
-    ctx.setLineDash(currentTool === 'dashed' ? [currentWidth * 2.4, currentWidth * 1.8] : []);
+    if (currentTool === 'dotted') {
+      ctx.setLineDash([Math.max(1.5, currentWidth * 0.4), Math.max(7, currentWidth * 2.2)]);
+    } else if (currentTool === 'dashed') {
+      ctx.setLineDash([Math.max(10, currentWidth * 3.2), Math.max(7, currentWidth * 2.1)]);
+    } else {
+      ctx.setLineDash([]);
+    }
 
     ctx.beginPath();
-    if (currentTool === 'line' || currentTool === 'dashed') {
+    if (currentTool === 'line' || currentTool === 'dashed' || currentTool === 'dotted') {
       ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     } else if (currentTool === 'wavy') {
       const dx = x2 - x1;
@@ -2833,7 +2899,7 @@
         ctx.stroke();
         ctx.restore();
       }
-    } else if (currentTool === 'arrow') {
+    } else if (currentTool === 'arrow' || currentTool === 'arrow-both') {
       ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       const angle = Math.atan2(y2 - y1, x2 - x1);
       const head = Math.max(12, currentWidth * 3.2);
@@ -2842,6 +2908,13 @@
       ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6));
       ctx.moveTo(x2, y2);
       ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6));
+      if (currentTool === 'arrow-both') {
+        const rev = angle + Math.PI;
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 - head * Math.cos(rev - Math.PI / 6), y1 - head * Math.sin(rev - Math.PI / 6));
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 - head * Math.cos(rev + Math.PI / 6), y1 - head * Math.sin(rev + Math.PI / 6));
+      }
       ctx.stroke();
     } else if (currentTool === 'rect') {
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
@@ -2885,7 +2958,7 @@
         ctx.lineWidth = currentWidth * 4;
       } else if (currentTool === 'highlighter') {
         ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = hexToRgba(currentColor, 0.28);
+        ctx.strokeStyle = hexToRgba(currentColor, currentHighlightAlpha);
         ctx.lineWidth = currentWidth * 4.5;
       } else {
         ctx.globalCompositeOperation = 'source-over';
@@ -3075,18 +3148,19 @@
 
       octx.save();
       if (mark) {
+        const ma = typeof mark.alpha === 'number' ? mark.alpha : 0.35;
         if (mark.style === 'highlight') {
           drawRoundedRectPath(octx, x, y + 1, w, h - 2, 6);
-          octx.fillStyle = hexToRgba(mark.color, 0.32);
+          octx.fillStyle = hexToRgba(mark.color, ma);
           octx.fill();
         } else if (mark.style === 'bottom-bar') {
           const bh = Math.max(6, h * 0.34);
           drawRoundedRectPath(octx, x, y + h - bh, w, bh, 4);
-          octx.fillStyle = hexToRgba(mark.color, 0.72);
+          octx.fillStyle = hexToRgba(mark.color, Math.min(0.95, Math.max(0.25, ma + 0.25)));
           octx.fill();
         } else if (mark.style === 'solid-block') {
           drawRoundedRectPath(octx, x, y + 1, w, h - 2, 5);
-          octx.fillStyle = hexToRgba(mark.color, 0.78);
+          octx.fillStyle = hexToRgba(mark.color, Math.min(0.95, Math.max(0.35, ma + 0.35)));
           octx.fill();
         } else if (mark.style === 'arrow-left') {
           const tip = Math.min(12, w * 0.25);
@@ -3097,7 +3171,7 @@
           octx.lineTo(x + tip, y + h - 1);
           octx.lineTo(x, y + h / 2);
           octx.closePath();
-          octx.fillStyle = hexToRgba(mark.color, 0.42);
+          octx.fillStyle = hexToRgba(mark.color, Math.min(0.9, ma + 0.08));
           octx.fill();
         } else if (mark.style === 'arrow-right') {
           const tip = Math.min(12, w * 0.25);
@@ -3108,7 +3182,7 @@
           octx.lineTo(x + w - tip, y + h - 1);
           octx.lineTo(x, y + h - 1);
           octx.closePath();
-          octx.fillStyle = hexToRgba(mark.color, 0.42);
+          octx.fillStyle = hexToRgba(mark.color, Math.min(0.9, ma + 0.08));
           octx.fill();
         } else if (mark.style === 'arrow-both') {
           const tip = Math.min(12, w * 0.22);
@@ -3120,10 +3194,19 @@
           octx.lineTo(x + tip, y + h - 1);
           octx.lineTo(x, y + h / 2);
           octx.closePath();
-          octx.fillStyle = hexToRgba(mark.color, 0.42);
+          octx.fillStyle = hexToRgba(mark.color, Math.min(0.9, ma + 0.08));
           octx.fill();
         } else if (mark.style === 'box' || mark.style === 'circle') {
           drawRoundedRectPath(octx, x + 1, y + 1, w - 2, h - 2, mark.style === 'circle' ? h / 2 : 6);
+          octx.strokeStyle = mark.color;
+          octx.lineWidth = 2.5;
+          octx.stroke();
+        } else if (mark.style === 'triangle') {
+          octx.beginPath();
+          octx.moveTo(x + w / 2, y + 2);
+          octx.lineTo(x + w - 2, y + h - 2);
+          octx.lineTo(x + 2, y + h - 2);
+          octx.closePath();
           octx.strokeStyle = mark.color;
           octx.lineWidth = 2.5;
           octx.stroke();
